@@ -1,7 +1,8 @@
+
 import React from 'react';
 
 export const LogoIcon: React.FC = () => (
-  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-sky-500">
+  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-sky-500">
     <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     <path d="M2 7L12 12L22 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     <path d="M12 22V12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -69,4 +70,25 @@ export const LinkedInIcon: React.FC = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
     <path d="M22.23 0H1.77C.8 0 0 .77 0 1.72v20.56C0 23.23.8 24 1.77 24h20.46c.98 0 1.77-.77 1.77-1.72V1.72C24 .77 23.2 0 22.23 0zM7.06 20.45H3.53V9h3.53v11.45zM5.3 7.5c-1.1 0-2-1-2-2.2s.9-2.2 2-2.2c1.1 0 2 1 2 2.2s-.9 2.2-2 2.2zm13.38 12.95h-3.53v-5.6c0-1.34-.02-3.07-1.87-3.07s-2.16 1.46-2.16 2.97v5.7h-3.53V9h3.38v1.54h.05c.47-.88 1.6-1.8 3.33-1.8 3.56 0 4.22 2.3 4.22 5.3v6.1z"/>
   </svg>
+);
+
+export const GoogleIcon: React.FC = () => (
+    <svg className="w-5 h-5" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path fillRule="evenodd" clipRule="evenodd" d="M48 24C48 22.0427 47.8427 20.1245 47.5455 18.2618H24.48V28.7382H37.8182C37.2655 31.8027 35.6455 34.3336 33.0027 36.0655V42.3464H41.4545C45.6218 38.3345 48 31.7836 48 24Z" fill="#4285F4"/>
+        <path fillRule="evenodd" clipRule="evenodd" d="M24.48 48.0001C30.9818 48.0001 36.45 45.9274 40.4564 42.3465L33.0027 36.0656C30.8 37.491 27.8809 38.3347 24.48 38.3347C18.1091 38.3347 12.72 34.0092 10.9364 28.2H2.18182V34.6528C6.18818 42.6656 14.64 48.0001 24.48 48.0001Z" fill="#34A853"/>
+        <path fillRule="evenodd" clipRule="evenodd" d="M10.9364 28.2001C10.4373 26.7746 10.1673 25.2656 10.1673 23.7092C10.1673 22.1528 10.4373 20.6437 10.9364 19.2183V12.7655H2.18182C0.818182 15.3965 0 18.4609 0 22.0001C0 25.5392 0.818182 28.6037 2.18182 31.2347L10.9364 28.2001Z" fill="#FBBC05"/>
+        <path fillRule="evenodd" clipRule="evenodd" d="M24.48 9.66545C27.3027 9.66545 29.8036 10.6364 31.7918 12.5118L40.6473 3.83454C36.45 0.253632 30.9818 0 24.48 0C14.64 0 6.18818 5.33454 2.18182 13.3473L10.9364 19.8C12.72 14.0091 18.1091 9.66545 24.48 9.66545Z" fill="#EA4335"/>
+    </svg>
+);
+
+export const LockIcon: React.FC = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+    </svg>
+);
+
+export const HistoryIcon: React.FC = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
 );

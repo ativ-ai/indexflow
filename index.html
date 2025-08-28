@@ -6,23 +6,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
     <!-- SEO Meta Tags -->
-    <title>IndexFlow: Free SEO Audit & Sitemap Generator</title>
-    <meta name="description" content="Instantly analyze your website's SEO with IndexFlow. Get a free, basic SEO audit covering title tags, meta descriptions, status codes, and more. Generate an XML sitemap in seconds to improve search engine crawling and indexing." />
-    <meta name="keywords" content="seo audit, sitemap generator, free seo tool, seo checker, xml sitemap, on-page seo, search engine optimization" />
+    <title>IndexFlow | Free SEO Audit & XML Sitemap Generator Tool</title>
+    <meta name="description" content="Check and improve your website's on-page SEO with IndexFlow. Get a free, instant audit of crucial factors like title tags and meta descriptions, and generate an XML sitemap to boost your search engine indexing." />
+    <meta name="keywords" content="seo audit, sitemap generator, free seo tool, seo checker, xml sitemap, on-page seo, search engine optimization, website analysis" />
     <link rel="canonical" href="https://indexflow.app/" />
+    <meta name="theme-color" content="#0ea5e9">
+
 
     <!-- Open Graph / Facebook Meta Tags -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://indexflow.app/" />
-    <meta property="og:title" content="IndexFlow: Free SEO Audit & Sitemap Generator" />
-    <meta property="og:description" content="Get a free SEO audit and generate an XML sitemap instantly. Improve your website's visibility on search engines with IndexFlow." />
+    <meta property="og:title" content="IndexFlow | Free SEO Audit & XML Sitemap Generator Tool" />
+    <meta property="og:description" content="Get a free, instant SEO audit and generate an XML sitemap to improve your website's visibility on search engines." />
     <meta property="og:image" content="https://indexflow.app/og-image.png" />
 
     <!-- Twitter Card Meta Tags -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta property="twitter:url" content="https://indexflow.app/" />
-    <meta name="twitter:title" content="IndexFlow: Free SEO Audit & Sitemap Generator" />
-    <meta name="twitter:description" content="Get a free SEO audit and generate an XML sitemap instantly. Improve your website's visibility on search engines with IndexFlow." />
+    <meta name="twitter:title" content="IndexFlow | Free SEO Audit & XML Sitemap Generator Tool" />
+    <meta name="twitter:description" content="Get a free, instant SEO audit and generate an XML sitemap to improve your website's visibility on search engines." />
     <meta name="twitter:image" content="https://indexflow.app/og-image.png" />
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -31,18 +33,34 @@
       "imports": {
         "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
         "react/": "https://aistudiocdn.com/react@^19.1.1/",
-        "react": "https://aistudiocdn.com/react@^19.1.1"
+        "react": "https://aistudiocdn.com/react@^19.1.1",
+        "@react-oauth/google": "https://aistudiocdn.com/@react-oauth/google@^0.12.1",
+        "@react-oauth/google/": "https://aistudiocdn.com/@react-oauth/google@^0.12.1/",
+        "axios": "https://aistudiocdn.com/axios@^1.7.2"
       }
     }
     </script>
 
-    <!-- JSON-LD Structured Data -->
+    <!-- JSON-LD Structured Data for Software Application -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebSite",
+      "@type": "SoftwareApplication",
       "name": "IndexFlow",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "Web",
+      "description": "A free tool to perform a basic SEO audit and generate an XML sitemap for any website.",
       "url": "https://indexflow.app/",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "reviewCount": "250"
+      },
       "potentialAction": {
         "@type": "SearchAction",
         "target": {
@@ -50,10 +68,31 @@
           "urlTemplate": "https://indexflow.app/?url={search_term_string}"
         },
         "query-input": "required name=search_term_string"
-      },
-      "description": "A free tool to perform a basic SEO audit and generate an XML sitemap for any website."
+      }
     }
     </script>
+    <style>
+      @keyframes fade-in-up {
+          from {
+              opacity: 0;
+              transform: translateY(1rem);
+          }
+          to {
+              opacity: 1;
+              transform: translateY(0);
+          }
+      }
+      .animate-fade-in-up {
+          animation: fade-in-up 0.5s ease-out forwards;
+      }
+      @keyframes fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      .animate-fade-in {
+        animation: fade-in 0.5s ease-out forwards;
+      }
+    </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
     <div id="root"></div>

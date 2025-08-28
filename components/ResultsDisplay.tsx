@@ -1,19 +1,50 @@
 import React, { useMemo, useState } from 'react';
-import { SeoResults } from '../types';
+import { SeoResults, AuditCheck } from '../types';
 import AuditItem from './AuditItem';
 import StatusDisplay from './StatusDisplay';
-import { DownloadIcon, CopyIcon, CheckIcon, TwitterIcon, LinkedInIcon } from './Icons';
+import { DownloadIcon, CopyIcon, CheckIcon, TwitterIcon, LinkedInIcon, LockIcon } from './Icons';
 
 interface ResultsDisplayProps {
   results: SeoResults | null;
   url: string;
   isLoading: boolean;
   statusMessage: string;
+  userPlan: 'FREE' | 'PRO';
+  // FIX: Changed onUpgradeClick to accept a mouse event from a button.
+  onUpgradeClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
-const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading, statusMessage }) => {
+const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading, statusMessage, userPlan, onUpgradeClick }) => {
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
   const [copiedRobotsLine, setCopiedRobotsLine] = useState(false);
+
+  // Refactored categorization logic to be more direct and clear.
+  // This ensures checks are categorized based solely on their ID, regardless of status or tier.
+  const { keyChecks, additionalChecks } = useMemo(() => {
+    if (!results) {
+      return { keyChecks: [], additionalChecks: [] };
+    }
+    const keyCheckIds = new Set(['statusCode', 'titleTag', 'metaDescription', 'h1Tag']);
+    const categorizedChecks: { keyChecks: AuditCheck[], additionalChecks: AuditCheck[] } = {
+        keyChecks: [],
+        additionalChecks: [],
+    };
+
+    results.audit.forEach(item => {
+        if (keyCheckIds.has(item.id)) {
+            categorizedChecks.keyChecks.push(item);
+        } else {
+            categorizedChecks.additionalChecks.push(item);
+        }
+    });
+    return categorizedChecks;
+  }, [results]);
+
+  const allProChecks = useMemo(() => 
+    results?.audit.filter(check => check.tier === 'PRO') ?? [], 
+    [results]
+  );
+
 
   const handleCopy = (link: string) => {
     if (navigator.clipboard) {
@@ -36,9 +67,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading
   };
 
   const handleShare = (platform: 'twitter' | 'linkedin') => {
-    // Find the title tag result from the audit
     const titleAudit = results?.audit.find(item => item.id === 'titleTag');
-    // Extract the title text, which is inside quotes. Fallback to the URL if not found.
     const auditedPageTitle = titleAudit ? titleAudit.value.match(/"([^"]*)"/)?.[1] || url : url;
 
     const shareUrl = `${window.location.origin}?url=${encodeURIComponent(url)}`;
@@ -98,11 +127,51 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading
                 </button>
             </div>
         </div>
-        <div className="space-y-4">
-          {results.audit.map(item => (
-            <AuditItem key={item.id} {...item} />
-          ))}
+
+        {/* Key Checks */}
+        <div className="mb-8">
+            <h3 className="text-2xl font-bold mb-4 text-slate-700 border-b-2 border-slate-200 pb-2">Key Checks</h3>
+            <div className="space-y-4">
+                {keyChecks
+                    .filter(item => userPlan === 'PRO' || item.tier !== 'PRO')
+                    .map(item => <AuditItem key={item.id} {...item} />)}
+            </div>
         </div>
+
+        {/* Additional Checks */}
+        <div className="mb-8">
+            <h3 className="text-2xl font-bold mb-4 text-slate-700 border-b-2 border-slate-200 pb-2">Additional Checks</h3>
+            <div className="space-y-4">
+                {additionalChecks
+                    .filter(item => userPlan === 'PRO' || item.tier !== 'PRO')
+                    .map(item => <AuditItem key={item.id} {...item} />)}
+            </div>
+        </div>
+
+
+        {userPlan === 'FREE' && allProChecks.length > 0 && (
+          <div className="mt-8 p-6 rounded-lg bg-slate-100/80 border border-slate-200/80 relative overflow-hidden">
+             <div className="absolute -top-12 -right-12 w-32 h-32 text-slate-300/50">
+                <LockIcon />
+            </div>
+            <h3 className="text-xl font-bold text-slate-800">Unlock More Insights with PRO</h3>
+            <p className="text-slate-600 mt-2 mb-4">Upgrade to PRO to get access to these additional checks and supercharge your SEO.</p>
+             <div className="space-y-3 my-4">
+              {allProChecks.map(item => (
+                <div key={item.id} className="flex items-center gap-3 text-slate-500">
+                  <LockIcon />
+                  <span className="font-medium">{item.title}</span>
+                </div>
+              ))}
+            </div>
+            <button
+                onClick={onUpgradeClick}
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-semibold rounded-lg shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-100 focus:ring-amber-500 transition-all duration-300"
+            >
+                Upgrade to PRO
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Sitemap Section */}
@@ -164,7 +233,11 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading
                 </div>
               </li>
               <li>
-                <strong>Submit to Search Engines:</strong> Finally, submit your sitemap URL to tools like <a href="https://search.google.com/search-console" target="_blank" rel="noopener noreferrer" className="font-medium text-sky-600 hover:text-sky-800 hover:underline">Google Search Console</a> to ensure they discover and index your pages efficiently.
+                <strong>Submit to Search Engines:</strong> Finally, submit your sitemap URL to the major search engines to ensure they discover and index your pages efficiently.
+                 <ul className="list-disc list-inside mt-2 space-y-1 pl-2">
+                    <li><a href="https://search.google.com/search-console" target="_blank" rel="noopener noreferrer" className="font-medium text-sky-600 hover:text-sky-800 hover:underline">Google Search Console</a></li>
+                    <li><a href="https://www.bing.com/webmasters/" target="_blank" rel="noopener noreferrer" className="font-medium text-sky-600 hover:text-sky-800 hover:underline">Bing Webmaster Tools</a></li>
+                </ul>
               </li>
             </ol>
           </div>
