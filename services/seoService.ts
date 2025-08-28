@@ -162,7 +162,7 @@ const generateMockAudit = (url: URL): AuditCheck[] => {
     status: AuditStatus.Info,
     value: `Present at ${url.origin}/robots.txt`,
     recommendation: 'A robots.txt file was found. Review it to ensure it allows crawlers to access important pages.',
-    tier: 'FREE'
+    tier: 'PRO'
   });
 
   return checks;

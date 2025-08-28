@@ -7,6 +7,7 @@ import SeoInputForm from './components/SeoInputForm';
 import ResultsDisplay from './components/ResultsDisplay';
 import About from './components/About';
 import Pricing from './components/Pricing';
+import FAQ from './components/FAQ'; // Import the new FAQ component
 import LoginButton from './components/LoginButton';
 import UserProfileDisplay from './components/UserProfile';
 import AuditHistory from './components/AuditHistory';
@@ -14,13 +15,20 @@ import CookieBanner from './components/CookieBanner';
 import ProFeatureTeaser from './components/ProFeatureTeaser';
 import { LogoIcon, HistoryIcon } from './components/Icons';
 
-type View = 'main' | 'about' | 'pricing';
+declare const Stripe: any; // Declare Stripe as a global variable from the script tag
+
+type View = 'main' | 'about' | 'pricing' | 'faq'; // Add 'faq' to the view types
 
 const FREE_PLAN_DAILY_LIMIT = 3;
+
+// NOTE: In a real application, this key should be stored in an environment variable.
+const STRIPE_PUBLISHABLE_KEY = 'pk_test_TYooMQauvdEDq54NiTphI7jx'; 
+const PRO_PLAN_PRICE_ID = 'price_1S1CMuDvGAbJzCKmnJ5fxRAX';
 
 const getViewFromPath = (path: string): View => {
   if (path === '/about') return 'about';
   if (path === '/pricing') return 'pricing';
+  if (path === '/faq') return 'faq'; // Handle the new FAQ path
   return 'main';
 };
 
@@ -37,6 +45,7 @@ const App: React.FC = () => {
   const [isLimitReached, setIsLimitReached] = useState<boolean>(false);
   const [showCookieBanner, setShowCookieBanner] = useState<boolean>(false);
   const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
+  const [isUpgrading, setIsUpgrading] = useState<boolean>(false);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -58,6 +67,30 @@ const App: React.FC = () => {
       window.removeEventListener('popstate', handlePopState);
     };
   }, []);
+
+  // Handle redirect from Stripe Checkout
+  useEffect(() => {
+    const query = new URLSearchParams(window.location.search);
+    const sessionId = query.get("session_id");
+    const canceled = query.get("canceled");
+
+    if (sessionId) {
+        alert("Upgrade successful! Welcome to PRO.");
+        // In a real app, we'd verify the session with the backend.
+        // For this demo, we'll just update the client-side state.
+        setUserPlan('PRO');
+    }
+
+    if (canceled) {
+        alert("Your upgrade was canceled. You can upgrade anytime from the pricing page.");
+    }
+
+    // Clean up the URL by removing the query parameters
+    if (sessionId || canceled) {
+        // Using replaceState to avoid adding to browser history
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []); // Run only once on component mount to check for redirects.
 
 
   useEffect(() => {
@@ -115,27 +148,14 @@ const App: React.FC = () => {
   const handleLoginSuccess = async (profile: UserProfile) => {
     setIsLoggingIn(true);
     setUser(profile);
-    setUserPlan('PRO');
+    // User starts on FREE plan after login, can upgrade later.
+    setUserPlan('FREE'); 
     
-    try {
-      // Create mock history data concurrently
-      const historyUrl1 = 'https://google.com';
-      const historyUrl2 = 'https://react.dev';
-      const [mockResults1, mockResults2] = await Promise.all([
-        analyzeUrl(historyUrl1),
-        analyzeUrl(historyUrl2)
-      ]);
-
-      setAuditHistory([
-        { id: new Date('2023-10-26T10:00:00Z').toISOString(), url: historyUrl1, date: new Date('2023-10-26T10:00:00Z'), results: mockResults1 },
-        { id: new Date('2023-10-25T15:30:00Z').toISOString(), url: historyUrl2, date: new Date('2023-10-25T15:30:00Z'), results: mockResults2 },
-      ]);
-    } catch (err) {
-      console.error("Failed to populate mock audit history on login:", err);
-      setError("There was an issue loading your audit history.");
-    } finally {
-      setIsLoggingIn(false);
-    }
+    // Simulate fetching *potential* previous history for a user.
+    // In a real app, this would be a fetch call to your backend.
+    // For this demo, we'll clear history on login to show the PRO teaser.
+    setAuditHistory([]);
+    setIsLoggingIn(false);
   };
 
   const handleLogout = () => {
@@ -256,12 +276,46 @@ const App: React.FC = () => {
     }
   };
 
+  const handleUpgrade = async () => {
+    if (!user) {
+        alert("Please log in to upgrade to PRO.");
+        return;
+    }
+    setIsUpgrading(true);
+    try {
+        const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+        if (!stripe) {
+            throw new Error('Stripe.js has not loaded yet.');
+        }
+
+        const { error } = await stripe.redirectToCheckout({
+            lineItems: [{ price: PRO_PLAN_PRICE_ID, quantity: 1 }],
+            mode: 'subscription',
+            successUrl: `${window.location.origin}${window.location.pathname.replace('pricing', '')}?session_id={CHECKOUT_SESSION_ID}`,
+            cancelUrl: `${window.location.origin}${window.location.pathname}?canceled=true`,
+            customerEmail: user.email,
+        });
+
+        if (error) {
+            console.error('Stripe checkout error:', error);
+            setError(`Payment failed: ${error.message}`);
+        }
+    } catch (err) {
+        const message = err instanceof Error ? err.message : 'An unknown error occurred during checkout.';
+        setError(message);
+    } finally {
+        setIsUpgrading(false);
+    }
+  };
+
   const renderView = () => {
     switch (view) {
       case 'about':
         return <About />;
       case 'pricing':
-        return <Pricing onNavigate={(e) => handleNavigate(e, 'main')} />;
+        return <Pricing onNavigate={(e) => handleNavigate(e, 'main')} onUpgradeClick={handleUpgrade} isUpgrading={isUpgrading} />;
+      case 'faq':
+        return <FAQ />; // Render the FAQ component
       case 'main':
       default:
         return (
@@ -337,6 +391,13 @@ const App: React.FC = () => {
                 className="font-medium text-sky-600 hover:text-sky-800 hover:underline focus:outline-none focus:ring-2 focus:ring-sky-500 rounded"
               >
                 Pricing
+              </a>
+              <a 
+                href="/faq"
+                onClick={(e) => handleNavigate(e, 'faq')} 
+                className="font-medium text-sky-600 hover:text-sky-800 hover:underline focus:outline-none focus:ring-2 focus:ring-sky-500 rounded"
+              >
+                FAQ
               </a>
             {user ? (
               <UserProfileDisplay user={user} onLogout={handleLogout} />

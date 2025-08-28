@@ -2,12 +2,15 @@
 
 
 
+
+
 import React, { useEffect } from 'react';
 import { CheckIcon, TokenIcon } from './Icons';
 
 interface PricingProps {
-    // FIX: Changed onNavigate to accept a mouse event from a button.
     onNavigate: (e: React.MouseEvent<HTMLButtonElement>) => void;
+    onUpgradeClick: () => void;
+    isUpgrading: boolean;
 }
 
 const Feature: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -19,7 +22,7 @@ const Feature: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     </li>
 );
 
-const Pricing: React.FC<PricingProps> = ({ onNavigate }) => {
+const Pricing: React.FC<PricingProps> = ({ onNavigate, onUpgradeClick, isUpgrading }) => {
   useEffect(() => {
     const scriptId = 'pro-plan-schema';
     const existingScript = document.getElementById(scriptId);
@@ -116,10 +119,11 @@ const Pricing: React.FC<PricingProps> = ({ onNavigate }) => {
                     <span className="text-lg font-medium text-slate-500">/month</span>
                 </div>
                 <button
-                    onClick={() => alert('Redirect to payment processor!')}
-                    className="mt-6 w-full text-center px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-semibold rounded-lg shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-all"
+                    onClick={onUpgradeClick}
+                    disabled={isUpgrading}
+                    className="mt-6 w-full text-center px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-semibold rounded-lg shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-all disabled:from-amber-400 disabled:to-orange-500 disabled:cursor-wait disabled:opacity-80"
                 >
-                    Upgrade to PRO
+                    {isUpgrading ? 'Redirecting...' : 'Upgrade to PRO'}
                 </button>
                 <ul className="mt-8 space-y-4 text-sm flex-grow">
                     <Feature><strong>Everything in Free, plus:</strong></Feature>
