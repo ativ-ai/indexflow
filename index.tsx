@@ -4,7 +4,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import App from './App';
 
 // IMPORTANT: Replace this with your actual Google Client ID from the Google Cloud Console.
-const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = "426444952457-f33v8h7882aov64j9v0s6q4714ns7lcp.apps.googleusercontent.com";
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

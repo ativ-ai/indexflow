@@ -1,8 +1,9 @@
 
 
 
+
 import React, { useEffect } from 'react';
-import { CheckIcon } from './Icons';
+import { CheckIcon, TokenIcon } from './Icons';
 
 interface PricingProps {
     // FIX: Changed onNavigate to accept a mouse event from a button.
@@ -99,13 +100,16 @@ const Pricing: React.FC<PricingProps> = ({ onNavigate }) => {
                     <Feature>Basic SEO Audit</Feature>
                     <Feature>Sitemap Generation</Feature>
                     <Feature>Internal Link Discovery</Feature>
-                    <Feature>1 Audit per Day</Feature>
+                    <Feature>3 Audits per Day</Feature>
                 </ul>
             </div>
 
             {/* Pro Plan */}
             <div className="border-2 border-amber-400 rounded-xl p-8 flex flex-col relative ring-4 ring-amber-400/20">
-                <h3 className="text-2xl font-bold text-slate-800">PRO</h3>
+                <div className="flex items-center gap-3">
+                  <TokenIcon className="w-8 h-8 text-amber-500" />
+                  <h3 className="text-2xl font-bold text-slate-800">PRO</h3>
+                </div>
                 <p className="mt-2 text-slate-500">For professionals who need to dive deeper into their SEO.</p>
                 <div className="mt-6">
                     <span className="text-4xl font-extrabold">$4.70</span>

@@ -121,7 +121,10 @@ const About: React.FC = () => {
 
         <div className="pt-6">
           <p>
-            Have questions or feedback? We'd love to hear from you at <a href="mailto:indexflow@pm.me" className="font-medium text-sky-600 hover:text-sky-800 hover:underline">indexflow@pm.me</a>.
+            Have questions or feedback? We'd love to hear from you at <a href="mailto:indexflow@ativ.ai" className="font-medium text-sky-600 hover:text-sky-800 hover:underline">indexflow@ativ.ai</a>.
+          </p>
+          <p className="mt-4">
+            Design by <a href="https://ativ.ai" target="_blank" rel="noopener noreferrer" className="font-medium text-sky-600 hover:text-sky-800 hover:underline">Ativ.ai</a>.
           </p>
         </div>
       </div>

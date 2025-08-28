@@ -132,7 +132,7 @@ const generateMockAudit = (url: URL): AuditCheck[] => {
       status: AuditStatus.Problem,
       value: 'Not found',
       recommendation: 'Add a canonical tag to prevent duplicate content issues. It tells search engines which version of a page is the primary one.',
-      tier: 'FREE'
+      tier: 'PRO'
     });
   } else if (canonicalScenario < 0.85) { // 70% chance: Self-referencing
     checks.push({
@@ -141,7 +141,7 @@ const generateMockAudit = (url: URL): AuditCheck[] => {
       status: AuditStatus.OK,
       value: `Self-referencing: "${url.href}"`,
       recommendation: 'The self-referencing canonical tag is correctly set up, which is great for SEO.',
-      tier: 'FREE'
+      tier: 'PRO'
     });
   } else { // 15% chance: Points to a different URL
     const differentUrl = new URL('/preferred-page', url.origin);
@@ -151,7 +151,7 @@ const generateMockAudit = (url: URL): AuditCheck[] => {
       status: AuditStatus.Info,
       value: `Points to: "${differentUrl.href}"`,
       recommendation: 'This page points to another URL as the canonical version. Ensure this is intentional, as only the canonical URL will be indexed.',
-      tier: 'FREE'
+      tier: 'PRO'
     });
   }
 

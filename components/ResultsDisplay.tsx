@@ -1,8 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { SeoResults, AuditCheck } from '../types';
 import AuditItem from './AuditItem';
 import StatusDisplay from './StatusDisplay';
-import { DownloadIcon, CopyIcon, CheckIcon, TwitterIcon, LinkedInIcon, LockIcon } from './Icons';
+import { DownloadIcon, CopyIcon, CheckIcon, TwitterIcon, LinkedInIcon } from './Icons';
 
 interface ResultsDisplayProps {
   results: SeoResults | null;
@@ -10,7 +10,6 @@ interface ResultsDisplayProps {
   isLoading: boolean;
   statusMessage: string;
   userPlan: 'FREE' | 'PRO';
-  // FIX: Changed onUpgradeClick to accept a mouse event from a button.
   onUpgradeClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
@@ -40,28 +39,35 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading
     return categorizedChecks;
   }, [results]);
 
-  const allProChecks = useMemo(() => 
-    results?.audit.filter(check => check.tier === 'PRO') ?? [], 
-    [results]
-  );
-
-
   const handleCopy = (link: string) => {
     if (navigator.clipboard) {
       navigator.clipboard.writeText(link).then(() => {
         setCopiedLink(link);
         setTimeout(() => setCopiedLink(null), 2000);
+      }).catch(err => {
+        console.error('Failed to copy link: ', err);
       });
     }
   };
 
-  const robotsTxtLine = useMemo(() => `Sitemap: ${new URL(url).origin}/sitemap.xml`, [url]);
+  const robotsTxtLine = useMemo(() => {
+    try {
+      const urlObject = new URL(url);
+      return `Sitemap: ${urlObject.origin}/sitemap.xml`;
+    } catch (e) {
+      console.error("Could not create a valid URL for the sitemap link from:", url);
+      return `Sitemap: [invalid-url-provided]/sitemap.xml`;
+    }
+  }, [url]);
+
 
   const handleRobotsCopy = () => {
       if (navigator.clipboard) {
           navigator.clipboard.writeText(robotsTxtLine).then(() => {
               setCopiedRobotsLine(true);
               setTimeout(() => setCopiedRobotsLine(false), 2000);
+          }).catch(err => {
+            console.error('Failed to copy robots.txt line: ', err);
           });
       }
   };
@@ -94,6 +100,15 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading
     const blobUrl = URL.createObjectURL(blob);
     return blobUrl;
   }, [results?.sitemapXml]);
+
+  useEffect(() => {
+    // This effect handles the cleanup of the blob URL to prevent memory leaks.
+    if (sitemapBlobUrl) {
+      return () => {
+        URL.revokeObjectURL(sitemapBlobUrl);
+      };
+    }
+  }, [sitemapBlobUrl]);
 
   if (isLoading) {
     return <StatusDisplay message={statusMessage} />;
@@ -132,9 +147,12 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading
         <div className="mb-8">
             <h3 className="text-2xl font-bold mb-4 text-slate-700 border-b-2 border-slate-200 pb-2">Key Checks</h3>
             <div className="space-y-4">
-                {keyChecks
-                    .filter(item => userPlan === 'PRO' || item.tier !== 'PRO')
-                    .map(item => <AuditItem key={item.id} {...item} />)}
+                {keyChecks.map(item => {
+                  if (userPlan === 'FREE' && item.tier === 'PRO') {
+                    return <AuditItem key={item.id} {...item} isLocked={true} onUpgradeClick={onUpgradeClick} />;
+                  }
+                  return <AuditItem key={item.id} {...item} isLocked={false} />;
+                })}
             </div>
         </div>
 
@@ -142,36 +160,14 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading
         <div className="mb-8">
             <h3 className="text-2xl font-bold mb-4 text-slate-700 border-b-2 border-slate-200 pb-2">Additional Checks</h3>
             <div className="space-y-4">
-                {additionalChecks
-                    .filter(item => userPlan === 'PRO' || item.tier !== 'PRO')
-                    .map(item => <AuditItem key={item.id} {...item} />)}
+                {additionalChecks.map(item => {
+                  if (userPlan === 'FREE' && item.tier === 'PRO') {
+                    return <AuditItem key={item.id} {...item} isLocked={true} onUpgradeClick={onUpgradeClick} />;
+                  }
+                  return <AuditItem key={item.id} {...item} isLocked={false} />;
+                })}
             </div>
         </div>
-
-
-        {userPlan === 'FREE' && allProChecks.length > 0 && (
-          <div className="mt-8 p-6 rounded-lg bg-slate-100/80 border border-slate-200/80 relative overflow-hidden">
-             <div className="absolute -top-12 -right-12 w-32 h-32 text-slate-300/50">
-                <LockIcon />
-            </div>
-            <h3 className="text-xl font-bold text-slate-800">Unlock More Insights with PRO</h3>
-            <p className="text-slate-600 mt-2 mb-4">Upgrade to PRO to get access to these additional checks and supercharge your SEO.</p>
-             <div className="space-y-3 my-4">
-              {allProChecks.map(item => (
-                <div key={item.id} className="flex items-center gap-3 text-slate-500">
-                  <LockIcon />
-                  <span className="font-medium">{item.title}</span>
-                </div>
-              ))}
-            </div>
-            <button
-                onClick={onUpgradeClick}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-semibold rounded-lg shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-100 focus:ring-amber-500 transition-all duration-300"
-            >
-                Upgrade to PRO
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Sitemap Section */}

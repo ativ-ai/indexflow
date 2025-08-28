@@ -16,6 +16,8 @@ import { LogoIcon, HistoryIcon } from './components/Icons';
 
 type View = 'main' | 'about' | 'pricing';
 
+const FREE_PLAN_DAILY_LIMIT = 3;
+
 const getViewFromPath = (path: string): View => {
   if (path === '/about') return 'about';
   if (path === '/pricing') return 'pricing';
@@ -34,10 +36,21 @@ const App: React.FC = () => {
   const [auditHistory, setAuditHistory] = useState<AuditHistoryEntry[]>([]);
   const [isLimitReached, setIsLimitReached] = useState<boolean>(false);
   const [showCookieBanner, setShowCookieBanner] = useState<boolean>(false);
+  const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
 
   useEffect(() => {
     const handlePopState = () => {
-      setView(getViewFromPath(window.location.pathname));
+      const newView = getViewFromPath(window.location.pathname);
+      // When navigating back to the main page via browser history (e.g., using the "Back" button),
+      // reset the state to ensure a clean slate, matching the behavior of clicking the home link.
+      if (newView === 'main') {
+        setResults(null);
+        setError(null);
+        setUrl('');
+        setIsLoading(false);
+        setStatusMessage('');
+      }
+      setView(newView);
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -50,12 +63,23 @@ const App: React.FC = () => {
   useEffect(() => {
     const checkLimit = () => {
       if (userPlan === 'FREE') {
-        const lastAuditDate = localStorage.getItem('lastFreeAuditDate');
-        const today = new Date().toISOString().split('T')[0];
-        if (lastAuditDate === today) {
-          setIsLimitReached(true);
-        } else {
-          setIsLimitReached(false);
+        try {
+          const auditTrackerRaw = localStorage.getItem('freeAuditTracker');
+          const today = new Date().toISOString().split('T')[0];
+
+          if (auditTrackerRaw) {
+            const { date, count } = JSON.parse(auditTrackerRaw);
+            if (date === today && count >= FREE_PLAN_DAILY_LIMIT) {
+              setIsLimitReached(true);
+            } else {
+              setIsLimitReached(false);
+            }
+          } else {
+            setIsLimitReached(false);
+          }
+        } catch (error) {
+          console.warn('Could not access localStorage to check audit limit.', error);
+          setIsLimitReached(false); // Assume not reached if storage is inaccessible
         }
       } else {
         setIsLimitReached(false);
@@ -65,35 +89,53 @@ const App: React.FC = () => {
   }, [userPlan]);
 
   useEffect(() => {
-    const consent = localStorage.getItem('cookie_consent');
-    if (consent !== 'true') {
-      const timer = setTimeout(() => {
-        setShowCookieBanner(true);
-      }, 1500);
-      return () => clearTimeout(timer);
+    let timer: ReturnType<typeof setTimeout>;
+    try {
+      const consent = localStorage.getItem('cookie_consent');
+      if (consent !== 'true') {
+        timer = setTimeout(() => setShowCookieBanner(true), 1500);
+      }
+    } catch (error) {
+      console.warn('Could not access localStorage for cookie consent.', error);
+      // If we can't check, assume no consent and show banner
+      timer = setTimeout(() => setShowCookieBanner(true), 1500);
     }
+    return () => clearTimeout(timer);
   }, []);
 
   const handleAcceptCookies = () => {
-    localStorage.setItem('cookie_consent', 'true');
+    try {
+      localStorage.setItem('cookie_consent', 'true');
+    } catch (error) {
+      console.warn('Could not set cookie consent in localStorage.', error);
+    }
     setShowCookieBanner(false);
   };
 
   const handleLoginSuccess = async (profile: UserProfile) => {
+    setIsLoggingIn(true);
     setUser(profile);
-    // DEMO: Upgrade user to PRO and add mock history on login
-    setUserPlan('PRO'); 
+    setUserPlan('PRO');
     
-    // Create mock history data
-    const historyUrl1 = 'https://google.com';
-    const historyUrl2 = 'https://react.dev';
-    const mockResults1 = await analyzeUrl(historyUrl1);
-    const mockResults2 = await analyzeUrl(historyUrl2);
+    try {
+      // Create mock history data concurrently
+      const historyUrl1 = 'https://google.com';
+      const historyUrl2 = 'https://react.dev';
+      const [mockResults1, mockResults2] = await Promise.all([
+        analyzeUrl(historyUrl1),
+        analyzeUrl(historyUrl2)
+      ]);
 
-    setAuditHistory([
-      { id: new Date('2023-10-26T10:00:00Z').toISOString(), url: historyUrl1, date: new Date('2023-10-26T10:00:00Z'), results: mockResults1 },
-      { id: new Date('2023-10-25T15:30:00Z').toISOString(), url: historyUrl2, date: new Date('2023-10-25T15:30:00Z'), results: mockResults2 },
-    ]);
+      setAuditHistory([
+        { id: new Date('2023-10-26T10:00:00Z').toISOString(), url: historyUrl1, date: new Date('2023-10-26T10:00:00Z'), results: mockResults1 },
+        { id: new Date('2023-10-25T15:30:00Z').toISOString(), url: historyUrl2, date: new Date('2023-10-25T15:30:00Z'), results: mockResults2 },
+      ]);
+    } catch (err) {
+      console.error("Failed to populate mock audit history on login:", err);
+      setError("There was an issue loading your audit history.");
+    } finally {
+      setIsLoggingIn(false);
+    }
   };
 
   const handleLogout = () => {
@@ -104,11 +146,12 @@ const App: React.FC = () => {
 
   const handleLoginError = () => {
     console.error("Google login failed.");
+    setIsLoggingIn(false); // Ensure loading state is reset on error
   };
 
   const handleAnalysis = useCallback(async (targetUrl: string) => {
     if (isLimitReached) {
-      setError('You have reached your daily audit limit for the FREE plan. Please upgrade to PRO for unlimited analyses.');
+      setError(`You have reached your daily limit of ${FREE_PLAN_DAILY_LIMIT} audits on the FREE plan. Please upgrade to PRO for unlimited analyses.`);
       return;
     }
 
@@ -146,10 +189,27 @@ const App: React.FC = () => {
         };
         setAuditHistory(prevHistory => [newHistoryEntry, ...prevHistory]);
       } else if (userPlan === 'FREE') {
-        // FREE user: set the limit for today
-        const today = new Date().toISOString().split('T')[0];
-        localStorage.setItem('lastFreeAuditDate', today);
-        setIsLimitReached(true);
+        // FREE user: update the limit for today
+        try {
+            const auditTrackerRaw = localStorage.getItem('freeAuditTracker');
+            const today = new Date().toISOString().split('T')[0];
+            let newCount = 1;
+
+            if (auditTrackerRaw) {
+                const auditTracker = JSON.parse(auditTrackerRaw);
+                if (auditTracker.date === today) {
+                    newCount = auditTracker.count + 1;
+                }
+            }
+            
+            localStorage.setItem('freeAuditTracker', JSON.stringify({ date: today, count: newCount }));
+
+            if (newCount >= FREE_PLAN_DAILY_LIMIT) {
+                setIsLimitReached(true);
+            }
+        } catch (error) {
+            console.warn('Could not update audit limit in localStorage.', error);
+        }
       }
 
     } catch (err) {
@@ -169,22 +229,31 @@ const App: React.FC = () => {
     window.scrollTo({ top: 300, behavior: 'smooth' });
   };
   
-  const handleNavigate = (e: React.MouseEvent<HTMLAnchorElement>, targetView: View) => {
+  const handleNavigate = (e: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>, targetView: View) => {
     e.preventDefault();
-    const path = targetView === 'main' ? '/' : `/${targetView}`;
 
-    if (window.location.pathname === path) return;
-
-    window.history.pushState({}, '', path);
-    
+    // The primary navigation logic is updating the React state.
     if (targetView === 'main') {
-      setResults(null);
-      setError(null);
-      setUrl('');
-      setIsLoading(false);
-      setStatusMessage('');
+        // Reset state when navigating home
+        setResults(null);
+        setError(null);
+        setUrl('');
+        setIsLoading(false);
+        setStatusMessage('');
     }
     setView(targetView);
+
+    // The secondary logic is to update the browser URL for a better UX.
+    // This is wrapped in a try/catch because it can fail in sandboxed
+    // environments (like iframes), but the app should not crash.
+    try {
+      const path = targetView === 'main' ? '/' : `/${targetView}`;
+      if (window.location.pathname !== path) {
+        window.history.pushState({}, '', path);
+      }
+    } catch (error) {
+      console.warn("Could not update browser history, but navigation will proceed.", error);
+    }
   };
 
   const renderView = () => {
@@ -192,8 +261,7 @@ const App: React.FC = () => {
       case 'about':
         return <About />;
       case 'pricing':
-        // FIX: Added 'as any' to the event to match the signature of handleNavigate, which expects an Anchor element event.
-        return <Pricing onNavigate={(e) => handleNavigate(e as any, 'main')} />;
+        return <Pricing onNavigate={(e) => handleNavigate(e, 'main')} />;
       case 'main':
       default:
         return (
@@ -203,7 +271,7 @@ const App: React.FC = () => {
               
               {isLimitReached && userPlan === 'FREE' && !isLoading && (
                 <div className="mt-4 p-3 bg-amber-50 text-amber-800 border border-amber-200 rounded-lg text-center text-sm">
-                  You've used your free audit for today. <a href="/pricing" onClick={(e) => handleNavigate(e, 'pricing')} className="font-bold underline hover:text-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-500 rounded">Upgrade to PRO</a> for unlimited analyses.
+                  You've used your {FREE_PLAN_DAILY_LIMIT} free audits for today. <a href="/pricing" onClick={(e) => handleNavigate(e, 'pricing')} className="font-bold underline hover:text-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-500 rounded">Upgrade to PRO</a> for unlimited analyses.
                 </div>
               )}
               
@@ -216,7 +284,7 @@ const App: React.FC = () => {
                   icon={<HistoryIcon />}
                   title="Unlock Audit History"
                   description="PRO users can track their SEO progress by reviewing past analyses. Upgrade to keep a record of every audit."
-                  onUpgradeClick={(e) => handleNavigate(e as any, 'pricing')}
+                  onUpgradeClick={(e) => handleNavigate(e, 'pricing')}
                 />
               )}
 
@@ -233,7 +301,7 @@ const App: React.FC = () => {
                   isLoading={isLoading}
                   statusMessage={statusMessage}
                   userPlan={userPlan}
-                  onUpgradeClick={(e) => handleNavigate(e as any, 'pricing')}
+                  onUpgradeClick={(e) => handleNavigate(e, 'pricing')}
                 />
               )}
             </div>
@@ -273,7 +341,7 @@ const App: React.FC = () => {
             {user ? (
               <UserProfileDisplay user={user} onLogout={handleLogout} />
             ) : (
-              <LoginButton onLoginSuccess={handleLoginSuccess} onLoginError={handleLoginError} />
+              <LoginButton onLoginSuccess={handleLoginSuccess} onLoginError={handleLoginError} isLoading={isLoggingIn} />
             )}
           </nav>
         </header>
@@ -298,7 +366,7 @@ const App: React.FC = () => {
 
         <footer className="text-center mt-10 text-slate-500 text-sm">
             <p>
-              &copy; {new Date().getFullYear()} IndexFlow. Design by <a href="https://ativ.ai" target="_blank" rel="noopener noreferrer" className="font-medium text-sky-600 hover:text-sky-800 hover:underline">Ativ.ai</a>.
+              &copy; {new Date().getFullYear()} IndexFlow.
             </p>
         </footer>
       </div>

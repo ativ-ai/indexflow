@@ -8,6 +8,27 @@ interface AuditHistoryProps {
   onViewHistory: (entry: AuditHistoryEntry) => void;
 }
 
+// A robust date formatting utility function.
+const formatDate = (date: Date): string => {
+  try {
+    // Check if the date is valid before formatting.
+    if (!date || isNaN(date.getTime())) {
+      throw new Error("Invalid date object provided.");
+    }
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch (error) {
+    console.error("Could not format date:", date, error);
+    return "Invalid Date";
+  }
+};
+
+
 const AuditHistory: React.FC<AuditHistoryProps> = ({ history, onViewHistory }) => {
   return (
     <div className="mt-8 p-6 rounded-lg bg-slate-100/80 border border-slate-200/80">
@@ -29,13 +50,7 @@ const AuditHistory: React.FC<AuditHistoryProps> = ({ history, onViewHistory }) =
             <div className="flex-grow">
               <p className="font-semibold text-sky-700 break-all">{entry.url}</p>
               <p className="text-xs text-slate-500 mt-1">
-                {entry.date.toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
+                {formatDate(entry.date)}
               </p>
             </div>
             <button
