@@ -1,9 +1,3 @@
-
-
-
-
-
-
 import React, { useEffect } from 'react';
 import { CheckIcon, TokenIcon } from './Icons';
 
@@ -11,6 +5,7 @@ interface PricingProps {
     onNavigate: (e: React.MouseEvent<HTMLButtonElement>) => void;
     onUpgradeClick: () => void;
     isUpgrading: boolean;
+    userPlan: 'FREE' | 'PRO';
 }
 
 const Feature: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -22,8 +17,18 @@ const Feature: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     </li>
 );
 
-const Pricing: React.FC<PricingProps> = ({ onNavigate, onUpgradeClick, isUpgrading }) => {
+const Pricing: React.FC<PricingProps> = ({ onNavigate, onUpgradeClick, isUpgrading, userPlan }) => {
   useEffect(() => {
+    const originalTitle = document.title;
+    const metaDescription = document.querySelector('meta[name="description"]');
+    const originalDescription = metaDescription ? metaDescription.getAttribute('content') : '';
+
+    // Set page-specific meta tags
+    document.title = 'Pricing Plans | IndexFlow SEO Audit Tool';
+    if (metaDescription) {
+      metaDescription.setAttribute('content', "Choose the best plan. Compare IndexFlow's Free & PRO plans for SEO audits and sitemap generation.");
+    }
+    
     const scriptId = 'pro-plan-schema';
     const existingScript = document.getElementById(scriptId);
     if (existingScript) {
@@ -66,6 +71,10 @@ const Pricing: React.FC<PricingProps> = ({ onNavigate, onUpgradeClick, isUpgradi
     document.head.appendChild(script);
 
     return () => {
+      document.title = originalTitle;
+      if (metaDescription) {
+        metaDescription.setAttribute('content', originalDescription || '');
+      }
       const scriptToRemove = document.getElementById(scriptId);
       if (scriptToRemove) {
         scriptToRemove.remove();
@@ -118,13 +127,30 @@ const Pricing: React.FC<PricingProps> = ({ onNavigate, onUpgradeClick, isUpgradi
                     <span className="text-4xl font-extrabold">$4.70</span>
                     <span className="text-lg font-medium text-slate-500">/month</span>
                 </div>
-                <button
-                    onClick={onUpgradeClick}
-                    disabled={isUpgrading}
-                    className="mt-6 w-full text-center px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-semibold rounded-lg shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-all disabled:from-amber-400 disabled:to-orange-500 disabled:cursor-wait disabled:opacity-80"
-                >
-                    {isUpgrading ? 'Redirecting...' : 'Upgrade to PRO'}
-                </button>
+                <div className="relative group mt-6">
+                    <button
+                        onClick={onUpgradeClick}
+                        disabled={isUpgrading || userPlan === 'PRO'}
+                        className={`w-full text-center px-6 py-3 font-semibold rounded-lg shadow-md transition-all text-white
+                            ${userPlan === 'PRO'
+                                ? 'bg-gradient-to-r from-emerald-500 to-green-600 cursor-not-allowed'
+                                : 'bg-gradient-to-r from-amber-500 to-orange-600 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:from-amber-400 disabled:to-orange-500 disabled:cursor-wait disabled:opacity-80'
+                            }
+                        `}
+                        aria-describedby={userPlan === 'PRO' ? 'pro-tooltip' : undefined}
+                    >
+                        {userPlan === 'PRO' ? "You're on PRO" : isUpgrading ? 'Redirecting...' : 'Upgrade to PRO'}
+                    </button>
+                    {userPlan === 'PRO' && (
+                        <span
+                            id="pro-tooltip"
+                            role="tooltip"
+                            className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-3 py-1.5 text-sm font-light text-white bg-slate-800 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity duration-300 pointer-events-none"
+                        >
+                            You are already subscribed to the PRO plan.
+                        </span>
+                    )}
+                </div>
                 <ul className="mt-8 space-y-4 text-sm flex-grow">
                     <Feature><strong>Everything in Free, plus:</strong></Feature>
                     <Feature>Image Alt Tag Analysis</Feature>

@@ -103,7 +103,7 @@ const generateMockAudit = (url: URL): AuditCheck[] => {
     const titleTextOptions = [
       `Welcome to ${url.hostname}`, // Good length
       `${url.hostname}`, // Too short
-      `The Ultimate Guide to Everything You Need to Know About the Wonderful World of ${url.hostname}`, // Too long
+      `A Comprehensive Guide to All The Best Features and Services of ${url.hostname}`, // Too long
       `Sample Title for ${url.hostname}` // Good length
     ];
     // Use the random scenario to pick a title, ensuring variety

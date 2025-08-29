@@ -16,7 +16,7 @@ const FAQ: React.FC = () => {
 
     document.title = 'Frequently Asked Questions | IndexFlow';
     if (metaDescription) {
-      metaDescription.setAttribute('content', 'Find answers to common questions about IndexFlow, including how our SEO audit works, sitemap generation, plan details, and data privacy.');
+      metaDescription.setAttribute('content', 'Find answers to common questions about IndexFlow, including our SEO audit, sitemap generation, plan details, and data privacy.');
     }
 
     const scriptId = 'faq-schema';

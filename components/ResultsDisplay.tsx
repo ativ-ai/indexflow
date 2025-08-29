@@ -23,7 +23,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading
     if (!results) {
       return { keyChecks: [], additionalChecks: [] };
     }
-    const keyCheckIds = new Set(['statusCode', 'titleTag', 'metaDescription', 'h1Tag']);
+    const keyCheckIds = new Set(['statusCode', 'titleTag', 'metaDescription', 'h1Tag', 'canonicalTag']);
     const categorizedChecks: { keyChecks: AuditCheck[], additionalChecks: AuditCheck[] } = {
         keyChecks: [],
         additionalChecks: [],

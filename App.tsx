@@ -1,5 +1,3 @@
-
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { SeoResults, UserProfile, AuditHistoryEntry } from './types';
 import { analyzeUrl } from './services/seoService';
@@ -17,18 +15,19 @@ import { LogoIcon, HistoryIcon } from './components/Icons';
 
 declare const Stripe: any; // Declare Stripe as a global variable from the script tag
 
-type View = 'main' | 'about' | 'pricing' | 'faq'; // Add 'faq' to the view types
+type View = 'main' | 'about' | 'pricing' | 'faq';
 
 const FREE_PLAN_DAILY_LIMIT = 3;
+const FREE_PLAN_HISTORY_LIMIT = 5;
 
 // NOTE: In a real application, this key should be stored in an environment variable.
 const STRIPE_PUBLISHABLE_KEY = 'pk_test_TYooMQauvdEDq54NiTphI7jx'; 
-const PRO_PLAN_PRICE_ID = 'price_1S1CMuDvGAbJzCKmnJ5fxRAX';
+const PRO_PLAN_PRICE_ID = 'price_1S1CFIRXOBdTRV5ZAWFTjhBD';
 
 const getViewFromPath = (path: string): View => {
   if (path === '/about') return 'about';
   if (path === '/pricing') return 'pricing';
-  if (path === '/faq') return 'faq'; // Handle the new FAQ path
+  if (path === '/faq') return 'faq';
   return 'main';
 };
 
@@ -135,6 +134,30 @@ const App: React.FC = () => {
     }
     return () => clearTimeout(timer);
   }, []);
+  
+  // Effect to load local history for FREE users upon login
+  useEffect(() => {
+    if (user && userPlan === 'FREE') {
+      try {
+        const savedHistoryRaw = localStorage.getItem('freeAuditHistory');
+        if (savedHistoryRaw) {
+          // Rehydrate Date objects from JSON strings
+          const savedHistory = JSON.parse(savedHistoryRaw).map((entry: AuditHistoryEntry) => ({
+            ...entry,
+            date: new Date(entry.date),
+          }));
+          setAuditHistory(savedHistory);
+        } else {
+          setAuditHistory([]); // No history found, start with empty
+        }
+      } catch (error) {
+        console.warn('Could not load free audit history from localStorage.', error);
+        setAuditHistory([]);
+      }
+    }
+    // For PRO users, history remains session-based.
+    // When a user logs out, history is cleared by handleLogout.
+  }, [user, userPlan]);
 
   const handleAcceptCookies = () => {
     try {
@@ -148,13 +171,8 @@ const App: React.FC = () => {
   const handleLoginSuccess = async (profile: UserProfile) => {
     setIsLoggingIn(true);
     setUser(profile);
-    // User starts on FREE plan after login, can upgrade later.
+    // User starts on FREE plan. The useEffect above will handle loading their local history.
     setUserPlan('FREE'); 
-    
-    // Simulate fetching *potential* previous history for a user.
-    // In a real app, this would be a fetch call to your backend.
-    // For this demo, we'll clear history on login to show the PRO teaser.
-    setAuditHistory([]);
     setIsLoggingIn(false);
   };
 
@@ -199,17 +217,31 @@ const App: React.FC = () => {
       await new Promise(res => setTimeout(res, 500));
       
       setResults(seoData);
+      
+      const newHistoryEntry: AuditHistoryEntry = {
+        id: new Date().toISOString(),
+        url: targetUrl,
+        date: new Date(),
+        results: seoData,
+      };
 
       if (userPlan === 'PRO' && user) {
-        const newHistoryEntry: AuditHistoryEntry = {
-          id: new Date().toISOString(),
-          url: targetUrl,
-          date: new Date(),
-          results: seoData,
-        };
         setAuditHistory(prevHistory => [newHistoryEntry, ...prevHistory]);
       } else if (userPlan === 'FREE') {
-        // FREE user: update the limit for today
+         if (user) { // Only save history if a free user is logged in
+            setAuditHistory(prevHistory => {
+                const updatedHistory = [newHistoryEntry, ...prevHistory];
+                const limitedHistory = updatedHistory.slice(0, FREE_PLAN_HISTORY_LIMIT);
+                try {
+                    localStorage.setItem('freeAuditHistory', JSON.stringify(limitedHistory));
+                } catch (e) {
+                    console.warn('Failed to save audit history to local storage.', e);
+                }
+                return limitedHistory;
+            });
+        }
+
+        // FREE user: update the daily audit limit tracker
         try {
             const auditTrackerRaw = localStorage.getItem('freeAuditTracker');
             const today = new Date().toISOString().split('T')[0];
@@ -291,7 +323,7 @@ const App: React.FC = () => {
         const { error } = await stripe.redirectToCheckout({
             lineItems: [{ price: PRO_PLAN_PRICE_ID, quantity: 1 }],
             mode: 'subscription',
-            successUrl: `${window.location.origin}${window.location.pathname.replace('pricing', '')}?session_id={CHECKOUT_SESSION_ID}`,
+            successUrl: `${window.location.origin}/?session_id={CHECKOUT_SESSION_ID}`,
             cancelUrl: `${window.location.origin}${window.location.pathname}?canceled=true`,
             customerEmail: user.email,
         });
@@ -313,7 +345,7 @@ const App: React.FC = () => {
       case 'about':
         return <About />;
       case 'pricing':
-        return <Pricing onNavigate={(e) => handleNavigate(e, 'main')} onUpgradeClick={handleUpgrade} isUpgrading={isUpgrading} />;
+        return <Pricing onNavigate={(e) => handleNavigate(e, 'main')} onUpgradeClick={handleUpgrade} isUpgrading={isUpgrading} userPlan={userPlan} />;
       case 'faq':
         return <FAQ />; // Render the FAQ component
       case 'main':
@@ -329,11 +361,22 @@ const App: React.FC = () => {
                 </div>
               )}
               
-              {user && userPlan === 'PRO' && auditHistory.length > 0 && !isLoading && !results && (
-                <AuditHistory history={auditHistory} onViewHistory={handleViewHistory} />
+              {user && auditHistory.length > 0 && !isLoading && !results && (
+                <>
+                  <AuditHistory history={auditHistory} onViewHistory={handleViewHistory} />
+                  {userPlan === 'FREE' && auditHistory.length >= FREE_PLAN_HISTORY_LIMIT && (
+                      <div className="mt-4 p-3 bg-amber-50 text-amber-800 border border-amber-200 rounded-lg text-center text-sm animate-fade-in">
+                          You've reached your local history limit of {FREE_PLAN_HISTORY_LIMIT} audits.{' '}
+                          <a href="/pricing" onClick={(e) => handleNavigate(e, 'pricing')} className="font-bold underline hover:text-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-500 rounded">
+                              Upgrade to PRO
+                          </a>
+                          {' '}for unlimited cloud-saved history.
+                      </div>
+                  )}
+                </>
               )}
               
-              {user && userPlan === 'FREE' && !isLoading && !results && (
+              {user && userPlan === 'FREE' && auditHistory.length === 0 && !isLoading && !results && (
                 <ProFeatureTeaser
                   icon={<HistoryIcon />}
                   title="Unlock Audit History"
