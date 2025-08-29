@@ -45,18 +45,39 @@ const App: React.FC = () => {
   const [showCookieBanner, setShowCookieBanner] = useState<boolean>(false);
   const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
   const [isUpgrading, setIsUpgrading] = useState<boolean>(false);
+  const [initialMetas, setInitialMetas] = useState({ title: '', description: '' });
+
+  // Store initial meta tags from index.html on first load
+  useEffect(() => {
+    const metaDesc = document.querySelector('meta[name="description"]');
+    setInitialMetas({
+        title: document.title,
+        description: metaDesc ? metaDesc.getAttribute('content') || '' : '',
+    });
+  }, []);
+
+  // Callback to reset meta tags to their initial state
+  const resetMetaTags = useCallback(() => {
+      if (initialMetas.title) {
+        document.title = initialMetas.title;
+      }
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc && initialMetas.description) {
+          metaDesc.setAttribute('content', initialMetas.description);
+      }
+  }, [initialMetas]);
+
 
   useEffect(() => {
     const handlePopState = () => {
       const newView = getViewFromPath(window.location.pathname);
-      // When navigating back to the main page via browser history (e.g., using the "Back" button),
-      // reset the state to ensure a clean slate, matching the behavior of clicking the home link.
       if (newView === 'main') {
         setResults(null);
         setError(null);
         setUrl('');
         setIsLoading(false);
         setStatusMessage('');
+        resetMetaTags(); // Reset metas on browser back to home
       }
       setView(newView);
     };
@@ -65,7 +86,7 @@ const App: React.FC = () => {
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
-  }, []);
+  }, [resetMetaTags]);
 
   // Handle redirect from Stripe Checkout
   useEffect(() => {
@@ -284,20 +305,16 @@ const App: React.FC = () => {
   const handleNavigate = (e: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>, targetView: View) => {
     e.preventDefault();
 
-    // The primary navigation logic is updating the React state.
     if (targetView === 'main') {
-        // Reset state when navigating home
         setResults(null);
         setError(null);
         setUrl('');
         setIsLoading(false);
         setStatusMessage('');
+        resetMetaTags(); // Reset meta tags when navigating home
     }
     setView(targetView);
 
-    // The secondary logic is to update the browser URL for a better UX.
-    // This is wrapped in a try/catch because it can fail in sandboxed
-    // environments (like iframes), but the app should not crash.
     try {
       const path = targetView === 'main' ? '/' : `/${targetView}`;
       if (window.location.pathname !== path) {

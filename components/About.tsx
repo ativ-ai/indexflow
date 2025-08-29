@@ -8,9 +8,9 @@ const About: React.FC = () => {
     const originalDescription = metaDescription ? metaDescription.getAttribute('content') : '';
 
     // Set page-specific meta tags
-    document.title = 'About IndexFlow | Our Mission & SEO Philosophy';
+    document.title = 'About IndexFlow | Our Mission to Simplify SEO';
     if (metaDescription) {
-      metaDescription.setAttribute('content', 'Learn about IndexFlow, the free SEO audit and sitemap generation tool. Understand our mission to demystify on-page SEO for everyone.');
+      metaDescription.setAttribute('content', "Learn about the mission behind IndexFlow. We're dedicated to making on-page SEO accessible for everyone with our free audit and sitemap tool.");
     }
 
     // Cleanup function to restore original meta tags
@@ -24,7 +24,7 @@ const About: React.FC = () => {
 
   return (
     <section aria-labelledby="about-heading" className="bg-white rounded-xl shadow-xl ring-1 ring-slate-900/5 p-6 sm:p-8 animate-fade-in">
-      <h2 id="about-heading" className="text-3xl font-bold mb-5 text-transparent bg-clip-text bg-gradient-to-r from-sky-500 to-indigo-600">Our Mission</h2>
+      <h1 id="about-heading" className="text-3xl font-bold mb-5 text-transparent bg-clip-text bg-gradient-to-r from-sky-500 to-indigo-600">Our Mission</h1>
       <div className="space-y-6 text-slate-600 leading-relaxed">
         <p className="text-lg">
           IndexFlow was born from a simple idea: <strong>SEO shouldn't be a mystery.</strong>

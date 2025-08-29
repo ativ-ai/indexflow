@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
     <!-- SEO Meta Tags -->
     <title>IndexFlow | Free SEO Audit & Sitemap Generator</title>
-    <meta name="description" content="Check and improve your website's on-page SEO with IndexFlow. Get a free, instant audit of crucial factors like title tags and meta descriptions, and generate an XML sitemap to boost your search engine indexing." />
-    <meta name="keywords" content="seo audit, sitemap generator, free seo tool, seo checker, xml sitemap, on-page seo, search engine optimization, website analysis" />
+    <meta name="description" content="Instantly audit your website's SEO and generate a free XML sitemap with IndexFlow. Improve your search engine ranking with actionable insights on title tags, meta descriptions, and more." />
+    <meta name="keywords" content="seo audit, sitemap generator, free seo tool, seo checker, xml sitemap, on-page seo, search engine optimization, website analysis, technical seo, google ranking" />
     <link rel="canonical" href="https://indexflow.app/" />
     <meta name="theme-color" content="#0ea5e9">
 
@@ -43,34 +43,48 @@
     }
     </script>
 
-    <!-- JSON-LD Structured Data for Software Application -->
+    <!-- JSON-LD Structured Data -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "IndexFlow",
-      "applicationCategory": "DeveloperApplication",
-      "operatingSystem": "Web",
-      "description": "A free tool to perform a basic SEO audit and generate an XML sitemap for any website.",
-      "url": "https://indexflow.app/",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
-      },
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.8",
-        "reviewCount": "250"
-      },
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": {
-          "@type": "EntryPoint",
-          "urlTemplate": "https://indexflow.app/?url={search_term_string}"
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "url": "https://indexflow.app/",
+          "name": "IndexFlow",
+          "description": "Instantly audit your website's SEO and generate a free XML sitemap with IndexFlow. Improve your search engine ranking with actionable insights on title tags, meta descriptions, and more.",
+          "publisher": {
+            "@type": "Organization",
+            "name": "IndexFlow"
+          },
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": {
+              "@type": "EntryPoint",
+              "urlTemplate": "https://indexflow.app/?url={search_term_string}"
+            },
+            "query-input": "required name=search_term_string"
+          }
         },
-        "query-input": "required name=search_term_string"
-      }
+        {
+          "@type": "SoftwareApplication",
+          "name": "IndexFlow",
+          "applicationCategory": "DeveloperApplication",
+          "operatingSystem": "Web",
+          "description": "A free tool to perform a basic SEO audit and generate an XML sitemap for any website.",
+          "url": "https://indexflow.app/",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.8",
+            "reviewCount": "250"
+          }
+        }
+      ]
     }
     </script>
     <style>

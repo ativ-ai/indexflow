@@ -16,6 +16,7 @@ interface ResultsDisplayProps {
 const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading, statusMessage, userPlan, onUpgradeClick }) => {
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
   const [copiedRobotsLine, setCopiedRobotsLine] = useState(false);
+  const [copiedSitemapUrl, setCopiedSitemapUrl] = useState(false);
 
   // Refactored categorization logic to be more direct and clear.
   // This ensures checks are categorized based solely on their ID, regardless of status or tier.
@@ -50,16 +51,19 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading
     }
   };
 
-  const robotsTxtLine = useMemo(() => {
+  const sitemapPublicUrl = useMemo(() => {
     try {
       const urlObject = new URL(url);
-      return `Sitemap: ${urlObject.origin}/sitemap.xml`;
+      return `${urlObject.origin}/sitemap.xml`;
     } catch (e) {
       console.error("Could not create a valid URL for the sitemap link from:", url);
-      return `Sitemap: [invalid-url-provided]/sitemap.xml`;
+      return `[invalid-url-provided]/sitemap.xml`;
     }
   }, [url]);
 
+  const robotsTxtLine = useMemo(() => {
+    return `Sitemap: ${sitemapPublicUrl}`;
+  }, [sitemapPublicUrl]);
 
   const handleRobotsCopy = () => {
       if (navigator.clipboard) {
@@ -68,6 +72,17 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading
               setTimeout(() => setCopiedRobotsLine(false), 2000);
           }).catch(err => {
             console.error('Failed to copy robots.txt line: ', err);
+          });
+      }
+  };
+  
+  const handleSitemapUrlCopy = () => {
+      if (navigator.clipboard) {
+          navigator.clipboard.writeText(sitemapPublicUrl).then(() => {
+              setCopiedSitemapUrl(true);
+              setTimeout(() => setCopiedSitemapUrl(false), 2000);
+          }).catch(err => {
+            console.error('Failed to copy sitemap URL: ', err);
           });
       }
   };
@@ -229,7 +244,18 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading
                 </div>
               </li>
               <li>
-                <strong>Submit to Search Engines:</strong> Finally, submit your sitemap URL to the major search engines to ensure they discover and index your pages efficiently.
+                <strong>Submit to Search Engines:</strong> Submit your sitemap URL to search engines to ensure they discover your pages. Your sitemap URL is:
+                <div className="relative mt-2">
+                    <pre className="bg-slate-800 text-slate-100 p-3 pr-12 rounded-md block text-xs overflow-x-auto">{sitemapPublicUrl}</pre>
+                    <button
+                        onClick={handleSitemapUrlCopy}
+                        className="absolute top-1/2 right-2 -translate-y-1/2 p-1.5 rounded-md text-slate-400 hover:bg-slate-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all duration-200"
+                        aria-label="Copy sitemap URL"
+                    >
+                        {copiedSitemapUrl ? <CheckIcon /> : <CopyIcon />}
+                    </button>
+                </div>
+                <p className="mt-2 text-slate-600">Use the links below to submit:</p>
                  <ul className="list-disc list-inside mt-2 space-y-1 pl-2">
                     <li><a href="https://search.google.com/search-console" target="_blank" rel="noopener noreferrer" className="font-medium text-sky-600 hover:text-sky-800 hover:underline">Google Search Console</a></li>
                     <li><a href="https://www.bing.com/webmasters/" target="_blank" rel="noopener noreferrer" className="font-medium text-sky-600 hover:text-sky-800 hover:underline">Bing Webmaster Tools</a></li>
