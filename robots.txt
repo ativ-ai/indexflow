@@ -1,4 +1,4 @@
 User-agent: *
 Disallow:
 
-Sitemap: https://indexflow.app/sitemap.xml
+Sitemap: https://indexflow.app/sitem.xml
