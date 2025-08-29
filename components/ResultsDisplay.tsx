@@ -14,9 +14,7 @@ interface ResultsDisplayProps {
 }
 
 const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading, statusMessage, userPlan, onUpgradeClick }) => {
-  const [copiedLink, setCopiedLink] = useState<string | null>(null);
-  const [copiedRobotsLine, setCopiedRobotsLine] = useState(false);
-  const [copiedSitemapUrl, setCopiedSitemapUrl] = useState(false);
+  const [justCopied, setJustCopied] = useState<string | null>(null);
 
   // Refactored categorization logic to be more direct and clear.
   // This ensures checks are categorized based solely on their ID, regardless of status or tier.
@@ -40,13 +38,13 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading
     return categorizedChecks;
   }, [results]);
 
-  const handleCopy = (link: string) => {
+  const handleCopyToClipboard = (textToCopy: string, identifier: string) => {
     if (navigator.clipboard) {
-      navigator.clipboard.writeText(link).then(() => {
-        setCopiedLink(link);
-        setTimeout(() => setCopiedLink(null), 2000);
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        setJustCopied(identifier);
+        setTimeout(() => setJustCopied(null), 2000);
       }).catch(err => {
-        console.error('Failed to copy link: ', err);
+        console.error(`Failed to copy ${identifier}: `, err);
       });
     }
   };
@@ -64,28 +62,6 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading
   const robotsTxtLine = useMemo(() => {
     return `Sitemap: ${sitemapPublicUrl}`;
   }, [sitemapPublicUrl]);
-
-  const handleRobotsCopy = () => {
-      if (navigator.clipboard) {
-          navigator.clipboard.writeText(robotsTxtLine).then(() => {
-              setCopiedRobotsLine(true);
-              setTimeout(() => setCopiedRobotsLine(false), 2000);
-          }).catch(err => {
-            console.error('Failed to copy robots.txt line: ', err);
-          });
-      }
-  };
-  
-  const handleSitemapUrlCopy = () => {
-      if (navigator.clipboard) {
-          navigator.clipboard.writeText(sitemapPublicUrl).then(() => {
-              setCopiedSitemapUrl(true);
-              setTimeout(() => setCopiedSitemapUrl(false), 2000);
-          }).catch(err => {
-            console.error('Failed to copy sitemap URL: ', err);
-          });
-      }
-  };
 
   const handleShare = (platform: 'twitter' | 'linkedin') => {
     const titleAudit = results?.audit.find(item => item.id === 'titleTag');
@@ -209,11 +185,11 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading
                       {link}
                     </a>
                     <button 
-                      onClick={() => handleCopy(link)}
+                      onClick={() => handleCopyToClipboard(link, link)}
                       className="flex-shrink-0 ml-4 p-1.5 rounded-md text-slate-400 hover:bg-slate-200 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all duration-200"
                       aria-label={`Copy link: ${link}`}
                     >
-                      {copiedLink === link ? <CheckIcon /> : <CopyIcon />}
+                      {justCopied === link ? <CheckIcon /> : <CopyIcon />}
                     </button>
                   </div>
                 ))}
@@ -235,11 +211,11 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading
                 <div className="relative mt-2">
                   <pre className="bg-slate-800 text-slate-100 p-3 pr-12 rounded-md block text-xs overflow-x-auto">{robotsTxtLine}</pre>
                   <button 
-                    onClick={handleRobotsCopy}
+                    onClick={() => handleCopyToClipboard(robotsTxtLine, 'robots')}
                     className="absolute top-1/2 right-2 -translate-y-1/2 p-1.5 rounded-md text-slate-400 hover:bg-slate-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all duration-200"
                     aria-label="Copy robots.txt line"
                   >
-                    {copiedRobotsLine ? <CheckIcon /> : <CopyIcon />}
+                    {justCopied === 'robots' ? <CheckIcon /> : <CopyIcon />}
                   </button>
                 </div>
               </li>
@@ -248,11 +224,11 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading
                 <div className="relative mt-2">
                     <pre className="bg-slate-800 text-slate-100 p-3 pr-12 rounded-md block text-xs overflow-x-auto">{sitemapPublicUrl}</pre>
                     <button
-                        onClick={handleSitemapUrlCopy}
+                        onClick={() => handleCopyToClipboard(sitemapPublicUrl, 'sitemapUrl')}
                         className="absolute top-1/2 right-2 -translate-y-1/2 p-1.5 rounded-md text-slate-400 hover:bg-slate-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all duration-200"
                         aria-label="Copy sitemap URL"
                     >
-                        {copiedSitemapUrl ? <CheckIcon /> : <CopyIcon />}
+                        {justCopied === 'sitemapUrl' ? <CheckIcon /> : <CopyIcon />}
                     </button>
                 </div>
                 <p className="mt-2 text-slate-600">Use the links below to submit:</p>
