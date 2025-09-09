@@ -13,12 +13,36 @@ const About: React.FC = () => {
       metaDescription.setAttribute('content', "Learn about the mission behind IndexFlow. We're dedicated to making on-page SEO accessible for everyone with our free audit and sitemap tool.");
     }
 
+    // Add Breadcrumb schema
+    const scriptId = 'breadcrumb-schema';
+    const breadcrumbSchema = {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [{
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://indexflow.app/"
+      }, {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "About",
+        "item": "https://indexflow.app/about"
+      }]
+    };
+    const script = document.createElement('script');
+    script.id = scriptId;
+    script.type = 'application/ld+json';
+    script.text = JSON.stringify(breadcrumbSchema);
+    document.head.appendChild(script);
+
     // Cleanup function to restore original meta tags
     return () => {
       document.title = originalTitle;
       if (metaDescription) {
         metaDescription.setAttribute('content', originalDescription || '');
       }
+      document.getElementById(scriptId)?.remove();
     };
   }, []);
 

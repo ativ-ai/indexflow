@@ -81,16 +81,10 @@ const FAQ: React.FC = () => {
       metaDescription.setAttribute('content', 'Find answers to common questions about IndexFlow, including our SEO audit, sitemap generation, plan details, and data privacy.');
     }
 
-    const scriptId = 'faq-schema';
-    const existingScript = document.getElementById(scriptId);
-    if (existingScript) {
-      existingScript.remove();
-    }
+    const faqSchemaId = 'faq-schema';
+    const breadcrumbSchemaId = 'breadcrumb-schema';
 
-    const script = document.createElement('script');
-    script.id = scriptId;
-    script.type = 'application/ld+json';
-    script.text = JSON.stringify({
+    const faqSchema = {
         "@context": "https://schema.org",
         "@type": "FAQPage",
         "mainEntity": faqData.map(item => ({
@@ -101,18 +95,49 @@ const FAQ: React.FC = () => {
                 "text": item.answerText
             }
         }))
-    });
-    document.head.appendChild(script);
+    };
+    
+    const breadcrumbSchema = {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [{
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://indexflow.app/"
+      }, {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "FAQ",
+        "item": "https://indexflow.app/faq"
+      }]
+    };
+    
+    // Remove existing scripts to prevent duplicates before injecting new ones.
+    document.getElementById(faqSchemaId)?.remove();
+    document.getElementById(breadcrumbSchemaId)?.remove();
+
+    // Inject FAQ schema
+    const faqScript = document.createElement('script');
+    faqScript.id = faqSchemaId;
+    faqScript.type = 'application/ld+json';
+    faqScript.text = JSON.stringify(faqSchema);
+    document.head.appendChild(faqScript);
+    
+    // Inject Breadcrumb schema
+    const breadcrumbScript = document.createElement('script');
+    breadcrumbScript.id = breadcrumbSchemaId;
+    breadcrumbScript.type = 'application/ld+json';
+    breadcrumbScript.text = JSON.stringify(breadcrumbSchema);
+    document.head.appendChild(breadcrumbScript);
 
     return () => {
       document.title = originalTitle;
       if (metaDescription) {
         metaDescription.setAttribute('content', originalDescription || '');
       }
-      const scriptToRemove = document.getElementById(scriptId);
-      if (scriptToRemove) {
-        scriptToRemove.remove();
-      }
+      document.getElementById(faqSchemaId)?.remove();
+      document.getElementById(breadcrumbSchemaId)?.remove();
     };
   }, []);
 

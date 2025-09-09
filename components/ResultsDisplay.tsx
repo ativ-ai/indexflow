@@ -15,6 +15,7 @@ interface ResultsDisplayProps {
 
 const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading, statusMessage, userPlan, onUpgradeClick }) => {
   const [justCopied, setJustCopied] = useState<string | null>(null);
+  const [sitemapBlobUrl, setSitemapBlobUrl] = useState<string>('');
 
   // Refactored categorization logic to be more direct and clear.
   // This ensures checks are categorized based solely on their ID, regardless of status or tier.
@@ -85,21 +86,24 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading
   };
 
 
-  const sitemapBlobUrl = useMemo(() => {
-    if (!results?.sitemapXml) return '';
-    const blob = new Blob([results.sitemapXml], { type: 'application/xml' });
-    const blobUrl = URL.createObjectURL(blob);
-    return blobUrl;
-  }, [results?.sitemapXml]);
-
   useEffect(() => {
-    // This effect handles the cleanup of the blob URL to prevent memory leaks.
-    if (sitemapBlobUrl) {
-      return () => {
-        URL.revokeObjectURL(sitemapBlobUrl);
-      };
+    // This effect creates a temporary blob URL for the sitemap XML data.
+    // It's crucial to revoke the URL when it's no longer needed to prevent memory leaks.
+    let objectUrl = '';
+    if (results?.sitemapXml) {
+      const blob = new Blob([results.sitemapXml], { type: 'application/xml' });
+      objectUrl = URL.createObjectURL(blob);
     }
-  }, [sitemapBlobUrl]);
+    setSitemapBlobUrl(objectUrl);
+
+    // Cleanup function: This is returned from the effect and will be called
+    // by React right before the component unmounts or before the effect runs again.
+    return () => {
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [results?.sitemapXml]);
 
   if (isLoading) {
     return <StatusDisplay message={statusMessage} />;

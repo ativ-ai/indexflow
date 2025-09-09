@@ -225,17 +225,12 @@ const App: React.FC = () => {
     setUrl(targetUrl);
 
     try {
-      setStatusMessage('Fetching URL data...');
-      await new Promise(res => setTimeout(res, 500));
+      setStatusMessage('AI is analyzing your URL...');
       
-      setStatusMessage('Performing SEO audit...');
-      await new Promise(res => setTimeout(res, 1000));
-      
-      setStatusMessage('Generating sitemap...');
       const seoData = await analyzeUrl(targetUrl);
       
       setStatusMessage('Analysis complete!');
-      await new Promise(res => setTimeout(res, 500));
+      await new Promise(res => setTimeout(res, 500)); // Short delay for smooth UI transition
       
       setResults(seoData);
       

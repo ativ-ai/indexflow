@@ -70,6 +70,29 @@ const Pricing: React.FC<PricingProps> = ({ onNavigate, onUpgradeClick, isUpgradi
     script.text = JSON.stringify(proPlanSchema);
     document.head.appendChild(script);
 
+    const breadcrumbScriptId = 'breadcrumb-schema';
+    // Add breadcrumb schema
+    const breadcrumbSchema = {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [{
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://indexflow.app/"
+      }, {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Pricing",
+        "item": "https://indexflow.app/pricing"
+      }]
+    };
+    const breadcrumbScript = document.createElement('script');
+    breadcrumbScript.id = breadcrumbScriptId;
+    breadcrumbScript.type = 'application/ld+json';
+    breadcrumbScript.text = JSON.stringify(breadcrumbSchema);
+    document.head.appendChild(breadcrumbScript);
+
     return () => {
       document.title = originalTitle;
       if (metaDescription) {
@@ -79,6 +102,7 @@ const Pricing: React.FC<PricingProps> = ({ onNavigate, onUpgradeClick, isUpgradi
       if (scriptToRemove) {
         scriptToRemove.remove();
       }
+      document.getElementById(breadcrumbScriptId)?.remove();
     };
   }, []);
 
