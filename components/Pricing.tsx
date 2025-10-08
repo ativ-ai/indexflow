@@ -21,12 +21,18 @@ const Pricing: React.FC<PricingProps> = ({ onNavigate, onUpgradeClick, isUpgradi
   useEffect(() => {
     const originalTitle = document.title;
     const metaDescription = document.querySelector('meta[name="description"]');
-    const originalDescription = metaDescription ? metaDescription.getAttribute('content') : '';
+    const originalDescription = metaDescription ? metaDescription.getAttribute('content') : null;
+    const canonicalLink = document.querySelector("link[rel='canonical']");
+    const originalCanonicalHref = canonicalLink ? canonicalLink.getAttribute('href') : null;
+
 
     // Set page-specific meta tags
     document.title = 'Pricing Plans | IndexFlow SEO Audit Tool';
     if (metaDescription) {
       metaDescription.setAttribute('content', "Choose the best plan. Compare IndexFlow's Free & PRO plans for SEO audits and sitemap generation.");
+    }
+    if (canonicalLink) {
+        canonicalLink.setAttribute('href', 'https://indexflow.app/pricing');
     }
     
     const scriptId = 'pro-plan-schema';
@@ -55,11 +61,15 @@ const Pricing: React.FC<PricingProps> = ({ onNavigate, onUpgradeClick, isUpgradi
       "positiveNotes": {
         "@type": "ItemList",
         "itemListElement": [
-          { "@type": "ListItem", "position": 1, "name": "Image Alt Tag Analysis" },
-          { "@type": "ListItem", "position": 2, "name": "Open Graph Tag Check" },
-          { "@type": "ListItem", "position": 3, "name": "Mobile-Friendliness Check" },
-          { "@type": "ListItem", "position": 4, "name": "Unlimited Audits" },
-          { "@type": "ListItem", "position": 5, "name": "Audit History" }
+          { "@type": "ListItem", "position": 1, "name": "AI Meta Tag Generator" },
+          { "@type": "ListItem", "position": 2, "name": "Internal Link Optimization" },
+          { "@type": "ListItem", "position": 3, "name": "Core Web Vitals Analysis" },
+          { "@type": "ListItem", "position": 4, "name": "Structured Data (Schema) Check" },
+          { "@type": "ListItem", "position": 5, "name": "Image Alt, OG & Canonical Tags" },
+          { "@type": "ListItem", "position": 6, "name": "Broken Link & Redirect Chain Checks" },
+          { "@type": "ListItem", "position": 7, "name": "Facebook Pixel & Favicon Checks" },
+          { "@type": "ListItem", "position": 8, "name": "Unlimited Audits" },
+          { "@type": "ListItem", "position": 9, "name": "Cloud Audit History" }
         ]
       }
     };
@@ -71,6 +81,7 @@ const Pricing: React.FC<PricingProps> = ({ onNavigate, onUpgradeClick, isUpgradi
     document.head.appendChild(script);
 
     const breadcrumbScriptId = 'breadcrumb-schema';
+    document.getElementById(breadcrumbScriptId)?.remove();
     // Add breadcrumb schema
     const breadcrumbSchema = {
       "@context": "https://schema.org",
@@ -95,13 +106,13 @@ const Pricing: React.FC<PricingProps> = ({ onNavigate, onUpgradeClick, isUpgradi
 
     return () => {
       document.title = originalTitle;
-      if (metaDescription) {
-        metaDescription.setAttribute('content', originalDescription || '');
+      if (metaDescription && originalDescription) {
+        metaDescription.setAttribute('content', originalDescription);
       }
-      const scriptToRemove = document.getElementById(scriptId);
-      if (scriptToRemove) {
-        scriptToRemove.remove();
+      if (canonicalLink && originalCanonicalHref) {
+        canonicalLink.setAttribute('href', originalCanonicalHref);
       }
+      document.getElementById(scriptId)?.remove();
       document.getElementById(breadcrumbScriptId)?.remove();
     };
   }, []);
@@ -117,7 +128,7 @@ const Pricing: React.FC<PricingProps> = ({ onNavigate, onUpgradeClick, isUpgradi
             </p>
         </div>
 
-        <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+        <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {/* Free Plan */}
             <div className="border border-slate-200 rounded-xl p-8 flex flex-col">
                 <h3 className="text-2xl font-bold text-slate-800">Free</h3>
@@ -134,9 +145,11 @@ const Pricing: React.FC<PricingProps> = ({ onNavigate, onUpgradeClick, isUpgradi
                 </button>
                 <ul className="mt-8 space-y-4 text-sm flex-grow">
                     <Feature>Basic SEO Audit</Feature>
+                    <Feature>H2 &amp; H3 Tag Analysis</Feature>
                     <Feature>Sitemap Generation</Feature>
                     <Feature>Internal Link Discovery</Feature>
                     <Feature>3 Audits per Day</Feature>
+                    <Feature>Local Audit History (5 entries)</Feature>
                 </ul>
             </div>
 
@@ -177,11 +190,14 @@ const Pricing: React.FC<PricingProps> = ({ onNavigate, onUpgradeClick, isUpgradi
                 </div>
                 <ul className="mt-8 space-y-4 text-sm flex-grow">
                     <Feature><strong>Everything in Free, plus:</strong></Feature>
-                    <Feature>Image Alt Tag Analysis</Feature>
-                    <Feature>Open Graph Tag Check</Feature>
-                    <Feature>Mobile-Friendliness Check</Feature>
-                    <Feature>Unlimited Audits</Feature>
-                    <Feature>Audit History</Feature>
+                    <Feature>AI Meta Tag Generator</Feature>
+                    <Feature>Internal Link Optimization</Feature>
+                    <Feature>Core Web Vitals Analysis</Feature>
+                    <Feature>Structured Data (Schema) Check</Feature>
+                    <Feature>Image Alt, OG & Canonical Tags</Feature>
+                    <Feature>Broken Link & Redirect Chain Checks</Feature>
+                    <Feature>Facebook Pixel & Favicon Checks</Feature>
+                    <Feature>Unlimited Audits &amp; Cloud History</Feature>
                 </ul>
             </div>
         </div>

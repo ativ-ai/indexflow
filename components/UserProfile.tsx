@@ -4,9 +4,10 @@ import { UserProfile } from '../types';
 interface UserProfileDisplayProps {
     user: UserProfile;
     onLogout: () => void;
+    userPlan: 'FREE' | 'PRO';
 }
 
-const UserProfileDisplay: React.FC<UserProfileDisplayProps> = ({ user, onLogout }) => {
+const UserProfileDisplay: React.FC<UserProfileDisplayProps> = ({ user, onLogout, userPlan }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -38,7 +39,16 @@ const UserProfileDisplay: React.FC<UserProfileDisplayProps> = ({ user, onLogout 
                     alt="User avatar"
                 />
                 <div className="hidden sm:flex flex-col">
-                    <span className="text-sm font-semibold text-slate-800">{user.name}</span>
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-slate-800">{user.name}</span>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                            userPlan === 'PRO'
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-slate-100 text-slate-600'
+                        }`}>
+                            {userPlan}
+                        </span>
+                    </div>
                     <span className="text-xs text-slate-500">{user.email}</span>
                 </div>
             </button>

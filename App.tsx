@@ -1,3 +1,5 @@
+
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { SeoResults, UserProfile, AuditHistoryEntry } from './types';
 import { analyzeUrl } from './services/seoService';
@@ -5,29 +7,32 @@ import SeoInputForm from './components/SeoInputForm';
 import ResultsDisplay from './components/ResultsDisplay';
 import About from './components/About';
 import Pricing from './components/Pricing';
-import FAQ from './components/FAQ'; // Import the new FAQ component
+import FAQ from './components/FAQ';
 import LoginButton from './components/LoginButton';
 import UserProfileDisplay from './components/UserProfile';
 import AuditHistory from './components/AuditHistory';
 import CookieBanner from './components/CookieBanner';
-import ProFeatureTeaser from './components/ProFeatureTeaser';
-import { LogoIcon, HistoryIcon } from './components/Icons';
+import StatusDisplay from './components/StatusDisplay';
+import LandingPage from './components/LandingPage'; // Import the new Landing Page
+import { AnalyzeIcon, LogoIcon, MenuAboutIcon, MenuFAQIcon, MenuPricingIcon, SearchIcon } from './components/Icons';
 
 declare const Stripe: any; // Declare Stripe as a global variable from the script tag
 
-type View = 'main' | 'about' | 'pricing' | 'faq';
+type View = 'main' | 'about' | 'pricing' | 'faq' | 'analyze';
 
 const FREE_PLAN_DAILY_LIMIT = 3;
 const FREE_PLAN_HISTORY_LIMIT = 5;
 
 // NOTE: In a real application, this key should be stored in an environment variable.
-const STRIPE_PUBLISHABLE_KEY = 'pk_test_TYooMQauvdEDq54NiTphI7jx'; 
-const PRO_PLAN_PRICE_ID = 'price_1S1CFIRXOBdTRV5ZAWFTjhBD';
+const STRIPE_PUBLISHABLE_KEY = 'pk_test_TYooMQauvdEDq54NiTphI7jx';
+// NOTE: This is a sample test price ID. Replace with your actual price ID from your Stripe dashboard.
+const PRO_PLAN_PRICE_ID = 'price_1O5K6p2eZvKYlo2Ce4o32g2g';
 
 const getViewFromPath = (path: string): View => {
   if (path === '/about') return 'about';
   if (path === '/pricing') return 'pricing';
   if (path === '/faq') return 'faq';
+  if (path === '/analyze') return 'analyze';
   return 'main';
 };
 
@@ -36,6 +41,7 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [results, setResults] = useState<SeoResults | null>(null);
+  const [sitemapBlobUrl, setSitemapBlobUrl] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<View>(getViewFromPath(window.location.pathname));
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -47,6 +53,7 @@ const App: React.FC = () => {
   const [isUpgrading, setIsUpgrading] = useState<boolean>(false);
   const [initialMetas, setInitialMetas] = useState({ title: '', description: '' });
 
+
   // Store initial meta tags from index.html on first load
   useEffect(() => {
     const metaDesc = document.querySelector('meta[name="description"]');
@@ -55,6 +62,18 @@ const App: React.FC = () => {
         description: metaDesc ? metaDesc.getAttribute('content') || '' : '',
     });
   }, []);
+
+  // Update meta tags dynamically when viewing results
+  useEffect(() => {
+    if (results && url) {
+      document.title = `SEO Audit for ${url} | IndexFlow`;
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) {
+        metaDesc.setAttribute('content', `View the detailed SEO audit report for ${url}, including checks for title tags, meta descriptions, sitemap, and more.`);
+      }
+    }
+  }, [results, url]);
+
 
   // Callback to reset meta tags to their initial state
   const resetMetaTags = useCallback(() => {
@@ -71,13 +90,13 @@ const App: React.FC = () => {
   useEffect(() => {
     const handlePopState = () => {
       const newView = getViewFromPath(window.location.pathname);
-      if (newView === 'main') {
+      if (newView === 'main' || newView === 'analyze') {
         setResults(null);
         setError(null);
         setUrl('');
         setIsLoading(false);
         setStatusMessage('');
-        resetMetaTags(); // Reset metas on browser back to home
+        resetMetaTags(); // Reset metas on browser back to home or analyze page
       }
       setView(newView);
     };
@@ -111,6 +130,25 @@ const App: React.FC = () => {
         window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []); // Run only once on component mount to check for redirects.
+
+  // Effect to manage the lifecycle of the sitemap blob URL
+  useEffect(() => {
+    let objectUrl = '';
+    if (results?.sitemapXml) {
+      const blob = new Blob([results.sitemapXml], { type: 'application/xml' });
+      objectUrl = URL.createObjectURL(blob);
+      setSitemapBlobUrl(objectUrl);
+    } else {
+      setSitemapBlobUrl(''); // Clear URL if no results
+    }
+
+    // Cleanup function to revoke the URL and prevent memory leaks
+    return () => {
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [results]);
 
 
   useEffect(() => {
@@ -227,7 +265,7 @@ const App: React.FC = () => {
     try {
       setStatusMessage('AI is analyzing your URL...');
       
-      const seoData = await analyzeUrl(targetUrl);
+      const seoData = await analyzeUrl(targetUrl, userPlan);
       
       setStatusMessage('Analysis complete!');
       await new Promise(res => setTimeout(res, 500)); // Short delay for smooth UI transition
@@ -294,19 +332,58 @@ const App: React.FC = () => {
     setResults(entry.results);
     setError(null);
     setIsLoading(false);
-    window.scrollTo({ top: 300, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   
-  const handleNavigate = (e: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>, targetView: View) => {
-    e.preventDefault();
+  const handleDeleteHistoryEntry = (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this history entry? This action cannot be undone.')) {
+        return;
+    }
 
-    if (targetView === 'main') {
+    setAuditHistory(prevHistory => {
+        const updatedHistory = prevHistory.filter(entry => entry.id !== id);
+        
+        if (userPlan === 'FREE' && user) {
+            try {
+                localStorage.setItem('freeAuditHistory', JSON.stringify(updatedHistory));
+            } catch (e) {
+                console.warn('Failed to update audit history in local storage after deletion.', e);
+            }
+        }
+        
+        return updatedHistory;
+    });
+  };
+
+  const handleClearHistory = () => {
+    if (!window.confirm('Are you sure you want to clear your entire audit history? This action cannot be undone.')) {
+        return;
+    }
+
+    setAuditHistory([]);
+
+    if (userPlan === 'FREE' && user) {
+        try {
+            localStorage.removeItem('freeAuditHistory');
+        } catch (e) {
+            console.warn('Failed to clear audit history from local storage.', e);
+        }
+    }
+  };
+
+
+  const handleNavigate = (targetView: View, e?: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>) => {
+    if (e) {
+      e.preventDefault();
+    }
+
+    if (targetView === 'main' || targetView === 'analyze') {
         setResults(null);
         setError(null);
         setUrl('');
         setIsLoading(false);
         setStatusMessage('');
-        resetMetaTags(); // Reset meta tags when navigating home
+        resetMetaTags();
     }
     setView(targetView);
 
@@ -317,6 +394,15 @@ const App: React.FC = () => {
       }
     } catch (error) {
       console.warn("Could not update browser history, but navigation will proceed.", error);
+    }
+    
+    window.scrollTo(0, 0);
+  };
+
+  const handleLandingPageAnalysis = (targetUrl: string) => {
+    handleNavigate('analyze');
+    if (targetUrl && targetUrl.trim()) {
+      handleAnalysis(targetUrl);
     }
   };
 
@@ -335,8 +421,8 @@ const App: React.FC = () => {
         const { error } = await stripe.redirectToCheckout({
             lineItems: [{ price: PRO_PLAN_PRICE_ID, quantity: 1 }],
             mode: 'subscription',
-            successUrl: `${window.location.origin}/?session_id={CHECKOUT_SESSION_ID}`,
-            cancelUrl: `${window.location.origin}${window.location.pathname}?canceled=true`,
+            successUrl: `${window.location.origin}/pricing?session_id={CHECKOUT_SESSION_ID}`,
+            cancelUrl: `${window.location.origin}/pricing?canceled=true`,
             customerEmail: user.email,
         });
 
@@ -351,35 +437,47 @@ const App: React.FC = () => {
         setIsUpgrading(false);
     }
   };
-
+  
   const renderView = () => {
     switch (view) {
       case 'about':
         return <About />;
       case 'pricing':
-        return <Pricing onNavigate={(e) => handleNavigate(e, 'main')} onUpgradeClick={handleUpgrade} isUpgrading={isUpgrading} userPlan={userPlan} />;
+        return <Pricing onNavigate={(e) => handleNavigate('analyze', e)} onUpgradeClick={handleUpgrade} isUpgrading={isUpgrading} userPlan={userPlan} />;
       case 'faq':
-        return <FAQ />; // Render the FAQ component
-      case 'main':
-      default:
+        return <FAQ />;
+      case 'analyze':
         return (
-          <section aria-labelledby="main-heading">
+          <section aria-labelledby="analyze-heading">
+            <h1 id="analyze-heading" className="text-3xl sm:text-4xl font-bold text-center text-slate-800 mb-2">SEO Audit & Sitemap Tool</h1>
+            <p className="text-center text-slate-500 mb-8 max-w-2xl mx-auto">Enter any website URL to get an instant on-page SEO analysis and generate a free XML sitemap.</p>
             <div className="bg-white rounded-xl shadow-xl ring-1 ring-slate-900/5 p-6 sm:p-8">
-              <SeoInputForm onSubmit={handleAnalysis} isLoading={isLoading} isLimitReached={isLimitReached} />
+              <SeoInputForm 
+                initialUrl={url}
+                onSubmit={handleAnalysis} 
+                isLoading={isLoading} 
+                isLimitReached={isLimitReached}
+                sitemapUrl={sitemapBlobUrl}
+              />
               
               {isLimitReached && userPlan === 'FREE' && !isLoading && (
                 <div className="mt-4 p-3 bg-amber-50 text-amber-800 border border-amber-200 rounded-lg text-center text-sm">
-                  You've used your {FREE_PLAN_DAILY_LIMIT} free audits for today. <a href="/pricing" onClick={(e) => handleNavigate(e, 'pricing')} className="font-bold underline hover:text-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-500 rounded">Upgrade to PRO</a> for unlimited analyses.
+                  You've used your {FREE_PLAN_DAILY_LIMIT} free audits for today. <a href="/pricing" onClick={(e) => handleNavigate('pricing', e)} className="font-bold underline hover:text-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-500 rounded">Upgrade to PRO</a> for unlimited analyses.
                 </div>
               )}
               
-              {user && auditHistory.length > 0 && !isLoading && !results && (
+              {user && !isLoading && !results && (
                 <>
-                  <AuditHistory history={auditHistory} onViewHistory={handleViewHistory} />
+                  <AuditHistory 
+                    history={auditHistory} 
+                    onViewHistory={handleViewHistory} 
+                    onDeleteEntry={handleDeleteHistoryEntry}
+                    onClearHistory={handleClearHistory}
+                  />
                   {userPlan === 'FREE' && auditHistory.length >= FREE_PLAN_HISTORY_LIMIT && (
                       <div className="mt-4 p-3 bg-amber-50 text-amber-800 border border-amber-200 rounded-lg text-center text-sm animate-fade-in">
                           You've reached your local history limit of {FREE_PLAN_HISTORY_LIMIT} audits.{' '}
-                          <a href="/pricing" onClick={(e) => handleNavigate(e, 'pricing')} className="font-bold underline hover:text-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-500 rounded">
+                          <a href="/pricing" onClick={(e) => handleNavigate('pricing', e)} className="font-bold underline hover:text-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-500 rounded">
                               Upgrade to PRO
                           </a>
                           {' '}for unlimited cloud-saved history.
@@ -387,107 +485,92 @@ const App: React.FC = () => {
                   )}
                 </>
               )}
-              
-              {user && userPlan === 'FREE' && auditHistory.length === 0 && !isLoading && !results && (
-                <ProFeatureTeaser
-                  icon={<HistoryIcon />}
-                  title="Unlock Audit History"
-                  description="PRO users can track their SEO progress by reviewing past analyses. Upgrade to keep a record of every audit."
-                  onUpgradeClick={(e) => handleNavigate(e, 'pricing')}
-                />
-              )}
-
-              {error && (
-                <div className="mt-6 p-4 bg-red-50 text-red-700 border border-red-200 rounded-lg text-center">
-                  {error}
-                </div>
-              )}
-
-              {(isLoading || results) && (
-                <ResultsDisplay
-                  results={results}
-                  url={url}
-                  isLoading={isLoading}
-                  statusMessage={statusMessage}
-                  userPlan={userPlan}
-                  onUpgradeClick={(e) => handleNavigate(e, 'pricing')}
-                />
-              )}
             </div>
+            {isLoading && <StatusDisplay message={statusMessage} />}
+            
+            {error && (
+              <div className="mt-8 p-4 bg-red-50 text-red-800 border border-red-200 rounded-lg text-center animate-fade-in" role="alert">
+                  <p className="font-bold">An Error Occurred</p>
+                  <p>{error}</p>
+              </div>
+            )}
+            
+            {results && !isLoading && (
+              <ResultsDisplay 
+                results={results}
+                url={url}
+                isLoading={isLoading}
+                statusMessage={statusMessage}
+                userPlan={userPlan}
+                onUpgradeClick={(e) => handleNavigate('pricing', e)}
+                sitemapBlobUrl={sitemapBlobUrl}
+              />
+            )}
           </section>
         );
+      case 'main':
+      default:
+        return <LandingPage onAnalyze={handleLandingPageAnalysis} onNavigate={(e) => handleNavigate('analyze', e)} />;
     }
   };
 
   return (
-    <div className="min-h-screen font-sans flex flex-col items-center p-4 sm:p-6 lg:p-8">
-      <div className="w-full max-w-4xl mx-auto">
-        <header className="flex items-center justify-between py-4 mb-8 gap-4">
-           <a 
-            href="/"
-            onClick={(e) => handleNavigate(e, 'main')}
-            className="flex items-center gap-3 cursor-pointer group focus:outline-none focus:ring-2 focus:ring-sky-500 rounded-lg p-1 -m-1"
-            aria-label="IndexFlow Home"
-           >
-            <LogoIcon />
-            <span className="text-2xl font-bold text-slate-800 hidden sm:inline group-hover:text-sky-600 transition-colors">IndexFlow</span>
-          </a>
-          <nav className="flex items-center gap-4" aria-label="Main navigation">
-              <a 
-                href="/about"
-                onClick={(e) => handleNavigate(e, 'about')} 
-                className="font-medium text-sky-600 hover:text-sky-800 hover:underline focus:outline-none focus:ring-2 focus:ring-sky-500 rounded"
-              >
-                About
-              </a>
-             <a 
-                href="/pricing"
-                onClick={(e) => handleNavigate(e, 'pricing')} 
-                className="font-medium text-sky-600 hover:text-sky-800 hover:underline focus:outline-none focus:ring-2 focus:ring-sky-500 rounded"
-              >
-                Pricing
-              </a>
-              <a 
-                href="/faq"
-                onClick={(e) => handleNavigate(e, 'faq')} 
-                className="font-medium text-sky-600 hover:text-sky-800 hover:underline focus:outline-none focus:ring-2 focus:ring-sky-500 rounded"
-              >
-                FAQ
-              </a>
-            {user ? (
-              <UserProfileDisplay user={user} onLogout={handleLogout} />
-            ) : (
-              <LoginButton onLoginSuccess={handleLoginSuccess} onLoginError={handleLoginError} isLoading={isLoggingIn} />
-            )}
-          </nav>
+    <>
+      <div className="min-h-screen flex flex-col">
+        <header className="py-4 sticky top-0 bg-slate-50/80 backdrop-blur-lg z-20 border-b border-slate-900/5">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+                <a href="/" onClick={(e) => handleNavigate('main', e)} className="flex items-center gap-2 flex-shrink-0" aria-label="IndexFlow Home">
+                    <LogoIcon />
+                    <div>
+                        <h1 className="text-xl font-bold text-slate-900">IndexFlow</h1>
+                        <p className="text-sm text-slate-500 hidden sm:block">SEO Audit & Sitemap Tool</p>
+                    </div>
+                </a>
+                <nav className="hidden sm:flex items-center gap-6 text-sm font-medium">
+                    <a href="/about" onClick={(e) => handleNavigate('about', e)} className={`flex items-center gap-1.5 transition-colors hover:text-sky-600 ${view === 'about' ? 'text-sky-600' : 'text-slate-700'}`}>
+                        <MenuAboutIcon />
+                        <span>About</span>
+                    </a>
+                    <a href="/pricing" onClick={(e) => handleNavigate('pricing', e)} className={`flex items-center gap-1.5 transition-colors hover:text-sky-600 ${view === 'pricing' ? 'text-sky-600' : 'text-slate-700'}`}>
+                        <MenuPricingIcon />
+                        <span>Pricing</span>
+                    </a>
+                    <a href="/faq" onClick={(e) => handleNavigate('faq', e)} className={`flex items-center gap-1.5 transition-colors hover:text-sky-600 ${view === 'faq' ? 'text-sky-600' : 'text-slate-700'}`}>
+                        <MenuFAQIcon />
+                        <span>FAQ</span>
+                    </a>
+                </nav>
+                <div className="flex items-center gap-4 ml-auto">
+                    <a
+                        href="/analyze"
+                        onClick={(e) => handleNavigate('analyze', e)}
+                        className="hidden sm:inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-semibold rounded-lg shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-sky-500 transition-all duration-300"
+                    >
+                        Start Analysis
+                    </a>
+                    {user ? (
+                        <UserProfileDisplay user={user} onLogout={handleLogout} userPlan={userPlan} />
+                    ) : (
+                        <LoginButton onLoginSuccess={handleLoginSuccess} onLoginError={handleLoginError} isLoading={isLoggingIn} />
+                    )}
+                </div>
+            </div>
         </header>
 
-        {view === 'main' && (
-           <div className="text-center mb-10">
-            <h1 id="main-heading" className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-sky-500 to-indigo-600">
-              Instant SEO Audit & Sitemap
-            </h1>
-            <p className="text-slate-600 text-lg leading-relaxed max-w-2xl mx-auto font-medium mt-2">
-              Check, Generate, Index: Simple SEO That Works.
-            </p>
-            <p className="text-slate-500 text-base mt-3 leading-relaxed max-w-3xl mx-auto">
-              Get an instant SEO checkup and an XML sitemap for your website. We analyze crucial elements like title tags, meta descriptions, and status codes, offering clear recommendations to improve your search engine ranking.
-            </p>
-          </div>
-        )}
-       
-        <main>
-          {renderView()}
+        <main className="flex-grow py-8 sm:py-12">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                {renderView()}
+            </div>
         </main>
 
-        <footer className="text-center mt-10 text-slate-500 text-sm">
-            <p>
-              &copy; {new Date().getFullYear()} IndexFlow.
-            </p>
+        <footer className="py-8 bg-slate-100 text-center text-sm text-slate-500">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                <p>&copy; {new Date().getFullYear()} IndexFlow. All rights reserved. Design by <a href="https://ativ.ai" target="_blank" rel="noopener noreferrer" className="font-medium text-sky-600 hover:text-sky-800 hover:underline">Ativ.ai</a>.</p>
+            </div>
         </footer>
       </div>
       {showCookieBanner && <CookieBanner onAccept={handleAcceptCookies} />}
-    </div>
+    </>
   );
 };
 

@@ -1,7 +1,7 @@
 import React from 'react';
-import axios from 'axios';
 import { useGoogleLogin, TokenResponse } from '@react-oauth/google';
 import { UserProfile } from '../types';
+import { getUserProfile } from '../services/authService';
 import { GoogleIcon, SpinnerIcon } from './Icons';
 
 interface LoginButtonProps {
@@ -14,27 +14,15 @@ const LoginButton: React.FC<LoginButtonProps> = ({ onLoginSuccess, onLoginError,
     const login = useGoogleLogin({
         onSuccess: async (tokenResponse: Omit<TokenResponse, 'error' | 'error_description' | 'error_uri'>) => {
             try {
-                const res = await axios.get(`https://www.googleapis.com/oauth2/v1/userinfo?access_token=${tokenResponse.access_token}`, {
-                    headers: {
-                        Authorization: `Bearer ${tokenResponse.access_token}`,
-                        Accept: 'application/json'
-                    }
-                });
-                if (res.data && res.data.id && res.data.email) {
-                    // Awaiting the onLoginSuccess handler ensures that any async errors
-                    // within it (like failing to fetch audit history) are caught here.
-                    await onLoginSuccess(res.data);
-                } else {
-                    // Throw an error to be caught by the catch block below
-                    throw new Error('Invalid user profile data received from Google.');
-                }
+                const userProfile = await getUserProfile(tokenResponse.access_token);
+                await onLoginSuccess(userProfile);
             } catch (err) {
-                console.error("Failed to fetch user profile or process login:", err);
+                console.error("Login process failed after getting token:", err);
                 onLoginError();
             }
         },
         onError: (error) => {
-            console.error('Login Failed:', error);
+            console.error('Google Login Hook Error:', error);
             onLoginError();
         },
     });

@@ -1,4 +1,5 @@
 
+
 export enum AuditStatus {
   OK = 'OK',
   Problem = 'Problem',
@@ -14,10 +15,36 @@ export interface AuditCheck {
   tier?: 'FREE' | 'PRO';
 }
 
+export interface GeneratedMetaTags {
+  title: string;
+  description: string;
+  keywords: string;
+}
+
+export interface AnchorTextSuggestion {
+  link: string;
+  currentAnchorText: string;
+  suggestedAnchorText: string;
+}
+
+export interface LinkingOpportunity {
+  targetPage: string;
+  sourcePageSuggestion: string;
+  reason: string;
+}
+
+export interface InternalLinkAnalysis {
+  anchorTextSuggestions: AnchorTextSuggestion[];
+  orphanedPages: string[];
+  linkingOpportunities: LinkingOpportunity[];
+}
+
 export interface SeoResults {
   audit: AuditCheck[];
   sitemapXml: string;
   internalLinks: string[];
+  generatedMetaTags?: GeneratedMetaTags;
+  internalLinkAnalysis?: InternalLinkAnalysis;
 }
 
 export interface UserProfile {

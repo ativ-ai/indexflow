@@ -1,8 +1,11 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { SeoResults, AuditCheck } from '../types';
 import AuditItem from './AuditItem';
 import StatusDisplay from './StatusDisplay';
-import { DownloadIcon, CopyIcon, CheckIcon, TwitterIcon, LinkedInIcon } from './Icons';
+import ProFeatureTeaser from './ProFeatureTeaser';
+import MetaTagGenerator from './MetaTagGenerator';
+import InternalLinkAnalysisDisplay from './InternalLinkAnalysisDisplay';
+import { DownloadIcon, CopyIcon, CheckIcon, TwitterIcon, LinkedInIcon, CodeTagIcon, LinkIcon } from './Icons';
 
 interface ResultsDisplayProps {
   results: SeoResults | null;
@@ -11,11 +14,11 @@ interface ResultsDisplayProps {
   statusMessage: string;
   userPlan: 'FREE' | 'PRO';
   onUpgradeClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  sitemapBlobUrl: string;
 }
 
-const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading, statusMessage, userPlan, onUpgradeClick }) => {
+const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading, statusMessage, userPlan, onUpgradeClick, sitemapBlobUrl }) => {
   const [justCopied, setJustCopied] = useState<string | null>(null);
-  const [sitemapBlobUrl, setSitemapBlobUrl] = useState<string>('');
 
   // Refactored categorization logic to be more direct and clear.
   // This ensures checks are categorized based solely on their ID, regardless of status or tier.
@@ -86,25 +89,6 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading
   };
 
 
-  useEffect(() => {
-    // This effect creates a temporary blob URL for the sitemap XML data.
-    // It's crucial to revoke the URL when it's no longer needed to prevent memory leaks.
-    let objectUrl = '';
-    if (results?.sitemapXml) {
-      const blob = new Blob([results.sitemapXml], { type: 'application/xml' });
-      objectUrl = URL.createObjectURL(blob);
-    }
-    setSitemapBlobUrl(objectUrl);
-
-    // Cleanup function: This is returned from the effect and will be called
-    // by React right before the component unmounts or before the effect runs again.
-    return () => {
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-      }
-    };
-  }, [results?.sitemapXml]);
-
   if (isLoading) {
     return <StatusDisplay message={statusMessage} />;
   }
@@ -116,7 +100,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading
   return (
     <div className="mt-8 space-y-10 animate-fade-in">
       {/* SEO Audit Section */}
-      <div>
+      <section>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-5 gap-4">
             <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-sky-500 to-indigo-600">SEO Audit for <span className="text-indigo-600 break-all">{url}</span></h2>
             <div className="flex items-center gap-2 flex-shrink-0">
@@ -163,10 +147,39 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading
                 })}
             </div>
         </div>
-      </div>
+      </section>
+
+      {/* Meta Tag Generator Section */}
+      <section>
+        {userPlan === 'PRO' && results.generatedMetaTags && (
+          <MetaTagGenerator metaTags={results.generatedMetaTags} />
+        )}
+        {userPlan === 'FREE' && (
+          <ProFeatureTeaser
+            icon={<CodeTagIcon />}
+            title="AI Meta Tag Generator"
+            description="PRO users get access to AI-generated title tags, meta descriptions, and keywords to boost click-through rates from search results."
+            onUpgradeClick={onUpgradeClick}
+          />
+        )}
+      </section>
+
+      {/* Internal Link Analysis Section */}
+      <section>
+        {userPlan === 'PRO' && results.internalLinkAnalysis ? (
+          <InternalLinkAnalysisDisplay analysis={results.internalLinkAnalysis} />
+        ) : (
+          <ProFeatureTeaser
+            icon={<LinkIcon />}
+            title="Internal Link Optimization Analysis"
+            description="PRO users get an AI-powered analysis of their internal linking strategy, with suggestions for anchor text, orphaned pages, and new linking opportunities."
+            onUpgradeClick={onUpgradeClick}
+          />
+        )}
+      </section>
 
       {/* Sitemap Section */}
-      <div>
+      <section>
         <h2 className="text-3xl font-bold mb-5 text-transparent bg-clip-text bg-gradient-to-r from-sky-500 to-indigo-600">Your Sitemap is Ready!</h2>
         <div className="bg-slate-100/50 rounded-lg p-6 border border-slate-200">
           <p className="mb-5 text-slate-600 leading-relaxed">A sitemap has been generated based on the initial crawl of your site. You can download it below or inspect the discovered internal links.</p>
@@ -244,7 +257,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading
             </ol>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 };
