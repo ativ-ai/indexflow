@@ -87,25 +87,133 @@ const App: React.FC = () => {
   }, [initialMetas]);
 
 
+  const handleAnalysis = useCallback(async (targetUrl: string) => {
+    if (isLimitReached) {
+      setError(`You have reached your daily limit of ${FREE_PLAN_DAILY_LIMIT} audits on the FREE plan. Please upgrade to PRO for unlimited analyses.`);
+      return;
+    }
+
+    if (!targetUrl) {
+      setError('Please enter a valid URL.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    setResults(null);
+    setUrl(targetUrl);
+
+    try {
+      setStatusMessage('AI is analyzing your URL...');
+      
+      const seoData = await analyzeUrl(targetUrl, userPlan);
+      
+      setStatusMessage('Analysis complete!');
+      await new Promise(res => setTimeout(res, 500)); // Short delay for smooth UI transition
+      
+      setResults(seoData);
+
+      // Update URL to be shareable
+      const newPath = `/analyze?url=${encodeURIComponent(targetUrl)}`;
+      if (window.location.pathname + window.location.search !== newPath) {
+        window.history.pushState({ path: newPath }, `SEO Audit for ${targetUrl}`, newPath);
+      }
+      
+      const newHistoryEntry: AuditHistoryEntry = {
+        id: new Date().toISOString(),
+        url: targetUrl,
+        date: new Date(),
+        results: seoData,
+      };
+
+      if (userPlan === 'PRO' && user) {
+        setAuditHistory(prevHistory => [newHistoryEntry, ...prevHistory]);
+      } else if (userPlan === 'FREE') {
+         if (user) { // Only save history if a free user is logged in
+            setAuditHistory(prevHistory => {
+                const updatedHistory = [newHistoryEntry, ...prevHistory];
+                const limitedHistory = updatedHistory.slice(0, FREE_PLAN_HISTORY_LIMIT);
+                try {
+                    localStorage.setItem('freeAuditHistory', JSON.stringify(limitedHistory));
+                } catch (e) {
+                    console.warn('Failed to save audit history to local storage.', e);
+                }
+                return limitedHistory;
+            });
+        }
+
+        // FREE user: update the daily audit limit tracker
+        try {
+            const auditTrackerRaw = localStorage.getItem('freeAuditTracker');
+            const today = new Date().toISOString().split('T')[0];
+            let newCount = 1;
+
+            if (auditTrackerRaw) {
+                const auditTracker = JSON.parse(auditTrackerRaw);
+                if (auditTracker.date === today) {
+                    newCount = auditTracker.count + 1;
+                }
+            }
+            
+            localStorage.setItem('freeAuditTracker', JSON.stringify({ date: today, count: newCount }));
+
+            if (newCount >= FREE_PLAN_DAILY_LIMIT) {
+                setIsLimitReached(true);
+            }
+        } catch (error) {
+            console.warn('Could not update audit limit in localStorage.', error);
+        }
+      }
+
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'An unknown error occurred.';
+      setError(message);
+    } finally {
+      setIsLoading(false);
+      setStatusMessage('');
+    }
+  }, [userPlan, isLimitReached, user]);
+  
+  // Handle popstate for browser back/forward navigation
   useEffect(() => {
     const handlePopState = () => {
       const newView = getViewFromPath(window.location.pathname);
-      if (newView === 'main' || newView === 'analyze') {
-        setResults(null);
-        setError(null);
-        setUrl('');
-        setIsLoading(false);
-        setStatusMessage('');
-        resetMetaTags(); // Reset metas on browser back to home or analyze page
+      const queryParams = new URLSearchParams(window.location.search);
+      const urlFromQuery = queryParams.get('url');
+
+      setView(newView); // Always update the view first
+
+      if ((newView !== 'analyze') || (newView === 'analyze' && !urlFromQuery)) {
+          // We've navigated to a page that shouldn't show results, or to /analyze without a URL
+          setResults(null);
+          setError(null);
+          setUrl('');
+          setIsLoading(false);
+          setStatusMessage('');
+          resetMetaTags();
+      } else if (newView === 'analyze' && urlFromQuery) {
+          // We've navigated to a results page (e.g., via back button), re-run the analysis for that URL
+          handleAnalysis(urlFromQuery);
       }
-      setView(newView);
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
-  }, [resetMetaTags]);
+  }, [resetMetaTags, handleAnalysis]);
+  
+  // Handle initial load with a URL parameter
+  useEffect(() => {
+    const queryParams = new URLSearchParams(window.location.search);
+    const urlFromQuery = queryParams.get('url');
+
+    if (getViewFromPath(window.location.pathname) === 'analyze' && urlFromQuery) {
+        handleAnalysis(urlFromQuery);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on initial mount
+
 
   // Handle redirect from Stripe Checkout
   useEffect(() => {
@@ -246,92 +354,14 @@ const App: React.FC = () => {
     setIsLoggingIn(false); // Ensure loading state is reset on error
   };
 
-  const handleAnalysis = useCallback(async (targetUrl: string) => {
-    if (isLimitReached) {
-      setError(`You have reached your daily limit of ${FREE_PLAN_DAILY_LIMIT} audits on the FREE plan. Please upgrade to PRO for unlimited analyses.`);
-      return;
-    }
-
-    if (!targetUrl) {
-      setError('Please enter a valid URL.');
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-    setResults(null);
-    setUrl(targetUrl);
-
-    try {
-      setStatusMessage('AI is analyzing your URL...');
-      
-      const seoData = await analyzeUrl(targetUrl, userPlan);
-      
-      setStatusMessage('Analysis complete!');
-      await new Promise(res => setTimeout(res, 500)); // Short delay for smooth UI transition
-      
-      setResults(seoData);
-      
-      const newHistoryEntry: AuditHistoryEntry = {
-        id: new Date().toISOString(),
-        url: targetUrl,
-        date: new Date(),
-        results: seoData,
-      };
-
-      if (userPlan === 'PRO' && user) {
-        setAuditHistory(prevHistory => [newHistoryEntry, ...prevHistory]);
-      } else if (userPlan === 'FREE') {
-         if (user) { // Only save history if a free user is logged in
-            setAuditHistory(prevHistory => {
-                const updatedHistory = [newHistoryEntry, ...prevHistory];
-                const limitedHistory = updatedHistory.slice(0, FREE_PLAN_HISTORY_LIMIT);
-                try {
-                    localStorage.setItem('freeAuditHistory', JSON.stringify(limitedHistory));
-                } catch (e) {
-                    console.warn('Failed to save audit history to local storage.', e);
-                }
-                return limitedHistory;
-            });
-        }
-
-        // FREE user: update the daily audit limit tracker
-        try {
-            const auditTrackerRaw = localStorage.getItem('freeAuditTracker');
-            const today = new Date().toISOString().split('T')[0];
-            let newCount = 1;
-
-            if (auditTrackerRaw) {
-                const auditTracker = JSON.parse(auditTrackerRaw);
-                if (auditTracker.date === today) {
-                    newCount = auditTracker.count + 1;
-                }
-            }
-            
-            localStorage.setItem('freeAuditTracker', JSON.stringify({ date: today, count: newCount }));
-
-            if (newCount >= FREE_PLAN_DAILY_LIMIT) {
-                setIsLimitReached(true);
-            }
-        } catch (error) {
-            console.warn('Could not update audit limit in localStorage.', error);
-        }
-      }
-
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'An unknown error occurred.';
-      setError(message);
-    } finally {
-      setIsLoading(false);
-      setStatusMessage('');
-    }
-  }, [userPlan, isLimitReached, user]);
-
   const handleViewHistory = (entry: AuditHistoryEntry) => {
     setUrl(entry.url);
     setResults(entry.results);
     setError(null);
     setIsLoading(false);
+    // Update URL to reflect the viewed history item
+    const newPath = `/analyze?url=${encodeURIComponent(entry.url)}`;
+    window.history.pushState({ path: newPath }, `SEO Audit for ${entry.url}`, newPath);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   
@@ -389,7 +419,8 @@ const App: React.FC = () => {
 
     try {
       const path = targetView === 'main' ? '/' : `/${targetView}`;
-      if (window.location.pathname !== path) {
+      const currentFullPath = window.location.pathname + window.location.search;
+      if (currentFullPath !== path) {
         window.history.pushState({}, '', path);
       }
     } catch (error) {
