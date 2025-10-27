@@ -14,7 +14,8 @@ import AuditHistory from './components/AuditHistory';
 import CookieBanner from './components/CookieBanner';
 import StatusDisplay from './components/StatusDisplay';
 import LandingPage from './components/LandingPage'; // Import the new Landing Page
-import { AnalyzeIcon, LogoIcon, MenuAboutIcon, MenuFAQIcon, MenuPricingIcon, SearchIcon } from './components/Icons';
+import { AnalyzeIcon, LogoIcon, MenuAboutIcon, MenuFAQIcon, MenuPricingIcon, SearchIcon, ChatIcon } from './components/Icons';
+import Chatbot from './components/Chatbot';
 
 declare const Stripe: any; // Declare Stripe as a global variable from the script tag
 
@@ -52,6 +53,7 @@ const App: React.FC = () => {
   const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
   const [isUpgrading, setIsUpgrading] = useState<boolean>(false);
   const [initialMetas, setInitialMetas] = useState({ title: '', description: '' });
+  const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
 
 
   // Store initial meta tags from index.html on first load
@@ -601,6 +603,16 @@ const App: React.FC = () => {
         </footer>
       </div>
       {showCookieBanner && <CookieBanner onAccept={handleAcceptCookies} />}
+      
+      <Chatbot isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+            
+      <button
+          onClick={() => setIsChatOpen(prev => !prev)}
+          className="fixed bottom-4 right-4 sm:right-6 z-20 w-14 h-14 bg-gradient-to-r from-sky-500 to-indigo-600 text-white rounded-full shadow-lg flex items-center justify-center hover:opacity-90 transform hover:scale-110 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500"
+          aria-label="Toggle AI Assistant"
+      >
+          <ChatIcon />
+      </button>
     </>
   );
 };
