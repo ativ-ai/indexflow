@@ -25,9 +25,7 @@ const FREE_PLAN_DAILY_LIMIT = 3;
 const FREE_PLAN_HISTORY_LIMIT = 5;
 
 // NOTE: In a real application, this key should be stored in an environment variable.
-const STRIPE_PUBLISHABLE_KEY = 'pk_test_TYooMQauvdEDq54NiTphI7jx';
-// NOTE: This is a sample test price ID. Replace with your actual price ID from your Stripe dashboard.
-const PRO_PLAN_PRICE_ID = 'price_1O5K6p2eZvKYlo2Ce4o32g2g';
+const STRIPE_PUBLISHABLE_KEY = 'pk_live_51Rb7ehDvGAbJzCKmoCqR74hJdm0hiheMikJhIaC18Sx8kUXEE5OeBP3MFiXImVhyJq4MJzWDjyVGrllVprWzeA8700wcHFPhPD';
 
 const getViewFromPath = (path: string): View => {
   if (path === '/about') return 'about';
@@ -439,7 +437,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleUpgrade = async () => {
+  const handleUpgrade = async (priceId: string) => {
     if (!user) {
         alert("Please log in to upgrade to PRO.");
         return;
@@ -452,7 +450,7 @@ const App: React.FC = () => {
         }
 
         const { error } = await stripe.redirectToCheckout({
-            lineItems: [{ price: PRO_PLAN_PRICE_ID, quantity: 1 }],
+            lineItems: [{ price: priceId, quantity: 1 }],
             mode: 'subscription',
             successUrl: `${window.location.origin}/pricing?session_id={CHECKOUT_SESSION_ID}`,
             cancelUrl: `${window.location.origin}/pricing?canceled=true`,

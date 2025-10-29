@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { CheckIcon, TokenIcon } from './Icons';
 
 interface PricingProps {
     onNavigate: (e: React.MouseEvent<HTMLButtonElement>) => void;
-    onUpgradeClick: () => void;
+    onUpgradeClick: (priceId: string) => void;
     isUpgrading: boolean;
     userPlan: 'FREE' | 'PRO';
 }
@@ -18,6 +18,24 @@ const Feature: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 const Pricing: React.FC<PricingProps> = ({ onNavigate, onUpgradeClick, isUpgrading, userPlan }) => {
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+
+  const proPlan = {
+      monthly: {
+          price: 9.70,
+          id: 'price_1S1CMuDvGAbJzCKmnJ5fxRAX'
+      },
+      yearly: {
+          price: 94.00,
+          id: 'price_1SNhj6DvGAbJzCKmZ7UY78LD'
+      }
+  };
+
+  const handleUpgrade = () => {
+      const priceId = billingCycle === 'monthly' ? proPlan.monthly.id : proPlan.yearly.id;
+      onUpgradeClick(priceId);
+  };
+
   useEffect(() => {
     const originalTitle = document.title;
     const metaDescription = document.querySelector('meta[name="description"]');
@@ -53,7 +71,7 @@ const Pricing: React.FC<PricingProps> = ({ onNavigate, onUpgradeClick, isUpgradi
       },
       "offers": {
         "@type": "Offer",
-        "price": "4.70",
+        "price": "9.70",
         "priceCurrency": "USD",
         "availability": "https://schema.org/InStock",
         "url": "https://indexflow.app/pricing"
@@ -128,6 +146,27 @@ const Pricing: React.FC<PricingProps> = ({ onNavigate, onUpgradeClick, isUpgradi
             </p>
         </div>
 
+        <div className="flex justify-center items-center gap-4 my-10">
+            <span className={`font-medium transition-colors ${billingCycle === 'monthly' ? 'text-sky-600' : 'text-slate-500'}`}>Monthly</span>
+            <button
+                onClick={() => setBillingCycle(prev => prev === 'monthly' ? 'yearly' : 'monthly')}
+                className={`relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 ${billingCycle === 'yearly' ? 'bg-sky-600' : 'bg-slate-300'}`}
+                role="switch"
+                aria-checked={billingCycle === 'yearly'}
+            >
+                <span className="sr-only">Use setting</span>
+                <span
+                    aria-hidden="true"
+                    className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200 ${billingCycle === 'yearly' ? 'translate-x-5' : 'translate-x-0'}`}
+                />
+            </button>
+            <span className={`font-medium transition-colors relative ${billingCycle === 'yearly' ? 'text-sky-600' : 'text-slate-500'}`}>
+                Yearly
+                <span className="absolute -top-4 -right-12 text-xs font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">Save 20%</span>
+            </span>
+        </div>
+
+
         <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {/* Free Plan */}
             <div className="border border-slate-200 rounded-xl p-8 flex flex-col">
@@ -161,12 +200,22 @@ const Pricing: React.FC<PricingProps> = ({ onNavigate, onUpgradeClick, isUpgradi
                 </div>
                 <p className="mt-2 text-slate-500">For professionals who need to dive deeper into their SEO.</p>
                 <div className="mt-6">
-                    <span className="text-4xl font-extrabold">$4.70</span>
-                    <span className="text-lg font-medium text-slate-500">/month</span>
+                    {billingCycle === 'monthly' ? (
+                        <>
+                            <span className="text-4xl font-extrabold">${proPlan.monthly.price.toFixed(2)}</span>
+                            <span className="text-lg font-medium text-slate-500">/month</span>
+                        </>
+                    ) : (
+                        <>
+                            <span className="text-4xl font-extrabold">${proPlan.yearly.price.toFixed(2)}</span>
+                            <span className="text-lg font-medium text-slate-500">/year</span>
+                            <p className="text-sm text-slate-500 mt-1">Billed annually. (${(proPlan.yearly.price / 12).toFixed(2)}/month)</p>
+                        </>
+                    )}
                 </div>
                 <div className="relative group mt-6">
                     <button
-                        onClick={onUpgradeClick}
+                        onClick={handleUpgrade}
                         disabled={isUpgrading || userPlan === 'PRO'}
                         className={`w-full text-center px-6 py-3 font-semibold rounded-lg shadow-md transition-all text-white
                             ${userPlan === 'PRO'
