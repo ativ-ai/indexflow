@@ -44,7 +44,7 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<View>(getViewFromPath(window.location.pathname));
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [userPlan, setUserPlan] = useState<'FREE' | 'PRO'>('FREE');
+  const [userPlan, setUserPlan] = useState<'FREE' | 'Premium'>('FREE');
   const [auditHistory, setAuditHistory] = useState<AuditHistoryEntry[]>([]);
   const [isLimitReached, setIsLimitReached] = useState<boolean>(false);
   const [showCookieBanner, setShowCookieBanner] = useState<boolean>(false);
@@ -89,7 +89,7 @@ const App: React.FC = () => {
 
   const handleAnalysis = useCallback(async (targetUrl: string) => {
     if (isLimitReached) {
-      setError(`You have reached your daily limit of ${FREE_PLAN_DAILY_LIMIT} audits on the FREE plan. Please upgrade to PRO for unlimited analyses.`);
+      setError(`You have reached your daily limit of ${FREE_PLAN_DAILY_LIMIT} audits on the FREE plan. Please upgrade to Premium for unlimited analyses.`);
       return;
     }
 
@@ -126,7 +126,7 @@ const App: React.FC = () => {
         results: seoData,
       };
 
-      if (userPlan === 'PRO' && user) {
+      if (userPlan === 'Premium' && user) {
         setAuditHistory(prevHistory => [newHistoryEntry, ...prevHistory]);
       } else if (userPlan === 'FREE') {
          if (user) { // Only save history if a free user is logged in
@@ -222,10 +222,10 @@ const App: React.FC = () => {
     const canceled = query.get("canceled");
 
     if (sessionId) {
-        alert("Upgrade successful! Welcome to PRO.");
+        alert("Upgrade successful! Welcome to Premium.");
         // In a real app, we'd verify the session with the backend.
         // For this demo, we'll just update the client-side state.
-        setUserPlan('PRO');
+        setUserPlan('Premium');
     }
 
     if (canceled) {
@@ -322,7 +322,7 @@ const App: React.FC = () => {
         setAuditHistory([]);
       }
     }
-    // For PRO users, history remains session-based.
+    // For Premium users, history remains session-based.
     // When a user logs out, history is cleared by handleLogout.
   }, [user, userPlan]);
 
@@ -439,7 +439,7 @@ const App: React.FC = () => {
 
   const handleUpgrade = async (priceId: string) => {
     if (!user) {
-        alert("Please log in to upgrade to PRO.");
+        alert("Please log in to upgrade to Premium.");
         return;
     }
     setIsUpgrading(true);
@@ -493,7 +493,7 @@ const App: React.FC = () => {
               
               {isLimitReached && userPlan === 'FREE' && !isLoading && (
                 <div className="mt-4 p-3 bg-amber-50 text-amber-800 border border-amber-200 rounded-lg text-center text-sm">
-                  You've used your {FREE_PLAN_DAILY_LIMIT} free audits for today. <a href="/pricing" onClick={(e) => handleNavigate('pricing', e)} className="font-bold underline hover:text-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-500 rounded">Upgrade to PRO</a> for unlimited analyses.
+                  You've used your {FREE_PLAN_DAILY_LIMIT} free audits for today. <a href="/pricing" onClick={(e) => handleNavigate('pricing', e)} className="font-bold underline hover:text-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-500 rounded">Upgrade to Premium</a> for unlimited analyses.
                 </div>
               )}
               
@@ -509,7 +509,7 @@ const App: React.FC = () => {
                       <div className="mt-4 p-3 bg-amber-50 text-amber-800 border border-amber-200 rounded-lg text-center text-sm animate-fade-in">
                           You've reached your local history limit of {FREE_PLAN_HISTORY_LIMIT} audits.{' '}
                           <a href="/pricing" onClick={(e) => handleNavigate('pricing', e)} className="font-bold underline hover:text-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-500 rounded">
-                              Upgrade to PRO
+                              Upgrade to Premium
                           </a>
                           {' '}for unlimited cloud-saved history.
                       </div>

@@ -42,13 +42,13 @@ const AuditItem: React.FC<AuditItemProps> = ({ title, status, value, recommendat
               <h3 className="flex items-center gap-2 font-semibold text-slate-600">
                 {title}
                 {/* Subtle, inline lock icon */}
-                <span className="text-slate-400" title="PRO Feature">
+                <span className="text-slate-400" title="Premium Feature">
                   <LockIcon />
                 </span>
               </h3>
-              {/* "PRO" badge for clarity */}
+              {/* "Premium" badge for clarity */}
               <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800">
-                PRO
+                Premium
               </span>
             </div>
             <p className="text-sm text-slate-500 mt-2">Upgrade your plan to see the analysis and recommendation for this check.</p>
@@ -57,7 +57,7 @@ const AuditItem: React.FC<AuditItemProps> = ({ title, status, value, recommendat
                 onClick={onUpgradeClick}
                 className="mt-3 inline-flex items-center justify-center gap-2 px-4 py-1.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white text-sm font-semibold rounded-lg shadow-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-50 focus:ring-amber-500 transition-all duration-300"
               >
-                Upgrade to PRO
+                Upgrade to Premium
               </button>
             )}
           </div>

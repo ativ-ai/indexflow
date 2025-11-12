@@ -50,7 +50,7 @@ const faqData = [
     answerJsx: (
       <>
         <p>
-          This is a PRO feature that uses AI to analyze your website's internal linking structure. A strong internal linking strategy is vital for SEO as it helps search engines understand the relationship between your pages and distributes authority (or "link equity") throughout your site.
+          This is a Premium feature that uses AI to analyze your website's internal linking structure. A strong internal linking strategy is vital for SEO as it helps search engines understand the relationship between your pages and distributes authority (or "link equity") throughout your site.
         </p>
         <p className="mt-2">Our analysis provides actionable recommendations, including:</p>
         <ul className="list-disc list-inside space-y-2 pl-4 mt-2">
@@ -60,7 +60,7 @@ const faqData = [
         </ul>
       </>
     ),
-    answerText: "This is a PRO feature that uses AI to analyze your website's internal linking structure. A strong internal linking strategy is vital for SEO as it helps search engines understand the relationship between your pages and distributes authority (or 'link equity') throughout your site. Our analysis provides actionable recommendations, including: Anchor Text Suggestions (improving generic anchor text like 'click here' to be more descriptive), Orphaned Page Identification (finding pages that aren't linked to), and New Linking Opportunities (suggesting strategic new links between pages)."
+    answerText: "This is a Premium feature that uses AI to analyze your website's internal linking structure. A strong internal linking strategy is vital for SEO as it helps search engines understand the relationship between your pages and distributes authority (or 'link equity') throughout your site. Our analysis provides actionable recommendations, including: Anchor Text Suggestions (improving generic anchor text like 'click here' to be more descriptive), Orphaned Page Identification (finding pages that aren't linked to), and New Linking Opportunities (suggesting strategic new links between pages)."
   },
   {
     question: "Is this tool analyzing my live website?",
@@ -72,14 +72,14 @@ const faqData = [
     answerText: "To provide a fast and free service without running into browser security limits (CORS), this demonstration tool uses high-quality mock data for its analysis. A full-scale version would use a dedicated server to crawl websites in real-time to provide live data."
   },
   {
-    question: "What is the difference between the Free and PRO plans?",
+    question: "What is the difference between the Free and Premium plans?",
     answerJsx: (
       <>
         <p>
             The Free plan is perfect for getting started. It offers a core SEO audit, sitemap generation, and allows for up to 3 analyses per day, with a limited audit history saved to your local device.
         </p>
         <p>
-            The <strong>PRO plan</strong> is built for professionals and unlocks a full suite of advanced features:
+            The <strong>Premium plan</strong> is built for professionals and unlocks a full suite of advanced features:
         </p>
         <ul className="list-disc list-inside space-y-2 pl-4 mt-2">
             <li><strong>Unlimited Audits:</strong> Analyze as many URLs as you need.</li>
@@ -102,16 +102,16 @@ const faqData = [
         </ul>
       </>
     ),
-    answerText: "The Free plan is perfect for getting started. It offers a core SEO audit, sitemap generation, and allows for up to 3 analyses per day, with a limited audit history saved to your local device. The PRO plan is built for professionals and unlocks a full suite of advanced features, including: Unlimited Audits, Cloud-Saved History, an AI Meta Tag Generator, Internal Link Optimization Analysis to improve site structure, and deeper audit checks for Image Alt Tags, Open Graph (Social Media) Tags, Mobile-Friendliness, Core Web Vitals, Structured Data (Schema) Check, Canonical Tag Status, Favicon Presence, Facebook Pixel, and Broken Links & Redirect Chains."
+    answerText: "The Free plan is perfect for getting started. It offers a core SEO audit, sitemap generation, and allows for up to 3 analyses per day, with a limited audit history saved to your local device. The Premium plan is built for professionals and unlocks a full suite of advanced features, including: Unlimited Audits, Cloud-Saved History, an AI Meta Tag Generator, Internal Link Optimization Analysis to improve site structure, and deeper audit checks for Image Alt Tags, Open Graph (Social Media) Tags, Mobile-Friendliness, Core Web Vitals, Structured Data (Schema) Check, Canonical Tag Status, Favicon Presence, Facebook Pixel, and Broken Links & Redirect Chains."
   },
   {
     question: "What is a Facebook Pixel and why do you check for it?",
     answerJsx: (
         <p>
-            The Facebook Pixel is a snippet of code that you place on your website. It allows you to track conversions from Facebook ads, optimize ads, build targeted audiences for future ads, and retarget people who have already taken some kind of action on your website. We check for it as part of our PRO audit because it's a critical tool for any business that uses or plans to use Facebook for marketing.
+            The Facebook Pixel is a snippet of code that you place on your website. It allows you to track conversions from Facebook ads, optimize ads, build targeted audiences for future ads, and retarget people who have already taken some kind of action on your website. We check for it as part of our Premium audit because it's a critical tool for any business that uses or plans to use Facebook for marketing.
         </p>
     ),
-    answerText: "The Facebook Pixel is a snippet of code that you place on your website. It allows you to track conversions from Facebook ads, optimize ads, build targeted audiences for future ads, and retarget people who have already taken some kind of action on your website. We check for it as part of our PRO audit because it's a critical tool for any business that uses or plans to use Facebook for marketing."
+    answerText: "The Facebook Pixel is a snippet of code that you place on your website. It allows you to track conversions from Facebook ads, optimize ads, build targeted audiences for future ads, and retarget people who have already taken some kind of action on your website. We check for it as part of our Premium audit because it's a critical tool for any business that uses or plans to use Facebook for marketing."
   },
   {
     question: "Is my data safe?",
@@ -136,7 +136,7 @@ const FAQ: React.FC = () => {
 
     document.title = 'FAQ - SEO Audit & Sitemap Questions | IndexFlow';
     if (metaDescription) {
-      metaDescription.setAttribute('content', 'Got questions about SEO audits, sitemap generation, or how IndexFlow works? Find clear answers to frequently asked questions about our free and PRO plans.');
+      metaDescription.setAttribute('content', 'Got questions about SEO audits, sitemap generation, or how IndexFlow works? Find clear answers to frequently asked questions about our free and Premium plans.');
     }
     if (canonicalLink) {
         canonicalLink.setAttribute('href', 'https://indexflow.app/faq');

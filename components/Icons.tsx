@@ -1,9 +1,9 @@
 import React from 'react';
 
 export const LogoIcon: React.FC = () => (
-  <span className="material-symbols-outlined text-sky-500" style={{ fontSize: '40px', lineHeight: 1 }}>
-    mediation
-  </span>
+    <span className="material-symbols-outlined text-4xl text-sky-600">
+        mediation
+    </span>
 );
 
 export const AnalyzeIcon: React.FC = () => (

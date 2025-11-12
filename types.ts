@@ -12,7 +12,7 @@ export interface AuditCheck {
   status: AuditStatus;
   value: string;
   recommendation: string;
-  tier?: 'FREE' | 'PRO';
+  tier?: 'FREE' | 'Premium';
 }
 
 export interface GeneratedMetaTags {

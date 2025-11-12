@@ -12,7 +12,7 @@ interface ResultsDisplayProps {
   url: string;
   isLoading: boolean;
   statusMessage: string;
-  userPlan: 'FREE' | 'PRO';
+  userPlan: 'FREE' | 'Premium';
   onUpgradeClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
   sitemapBlobUrl: string;
 }
@@ -127,7 +127,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading
             <h3 className="text-2xl font-bold mb-4 text-slate-700 border-b-2 border-slate-200 pb-2">Key Checks</h3>
             <div className="space-y-4">
                 {keyChecks.map(item => {
-                  if (userPlan === 'FREE' && item.tier === 'PRO') {
+                  if (userPlan === 'FREE' && item.tier === 'Premium') {
                     return <AuditItem key={item.id} {...item} isLocked={true} onUpgradeClick={onUpgradeClick} />;
                   }
                   return <AuditItem key={item.id} {...item} isLocked={false} />;
@@ -140,7 +140,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading
             <h3 className="text-2xl font-bold mb-4 text-slate-700 border-b-2 border-slate-200 pb-2">Additional Checks</h3>
             <div className="space-y-4">
                 {additionalChecks.map(item => {
-                  if (userPlan === 'FREE' && item.tier === 'PRO') {
+                  if (userPlan === 'FREE' && item.tier === 'Premium') {
                     return <AuditItem key={item.id} {...item} isLocked={true} onUpgradeClick={onUpgradeClick} />;
                   }
                   return <AuditItem key={item.id} {...item} isLocked={false} />;
@@ -151,14 +151,14 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading
 
       {/* Meta Tag Generator Section */}
       <section>
-        {userPlan === 'PRO' && results.generatedMetaTags && (
+        {userPlan === 'Premium' && results.generatedMetaTags && (
           <MetaTagGenerator metaTags={results.generatedMetaTags} />
         )}
         {userPlan === 'FREE' && (
           <ProFeatureTeaser
             icon={<CodeTagIcon />}
             title="AI Meta Tag Generator"
-            description="PRO users get access to AI-generated title tags, meta descriptions, and keywords to boost click-through rates from search results."
+            description="Premium users get access to AI-generated title tags, meta descriptions, and keywords to boost click-through rates from search results."
             onUpgradeClick={onUpgradeClick}
           />
         )}
@@ -166,13 +166,13 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading
 
       {/* Internal Link Analysis Section */}
       <section>
-        {userPlan === 'PRO' && results.internalLinkAnalysis ? (
+        {userPlan === 'Premium' && results.internalLinkAnalysis ? (
           <InternalLinkAnalysisDisplay analysis={results.internalLinkAnalysis} />
         ) : (
           <ProFeatureTeaser
             icon={<LinkIcon />}
             title="Internal Link Optimization Analysis"
-            description="PRO users get an AI-powered analysis of their internal linking strategy, with suggestions for anchor text, orphaned pages, and new linking opportunities."
+            description="Premium users get an AI-powered analysis of their internal linking strategy, with suggestions for anchor text, orphaned pages, and new linking opportunities."
             onUpgradeClick={onUpgradeClick}
           />
         )}

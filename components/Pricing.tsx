@@ -5,7 +5,7 @@ interface PricingProps {
     onNavigate: (e: React.MouseEvent<HTMLButtonElement>) => void;
     onUpgradeClick: (priceId: string) => void;
     isUpgrading: boolean;
-    userPlan: 'FREE' | 'PRO';
+    userPlan: 'FREE' | 'Premium';
 }
 
 const Feature: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -20,7 +20,7 @@ const Feature: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 const Pricing: React.FC<PricingProps> = ({ onNavigate, onUpgradeClick, isUpgrading, userPlan }) => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
-  const proPlan = {
+  const premiumPlan = {
       monthly: {
           price: 9.70,
           id: 'price_1S1CMuDvGAbJzCKmnJ5fxRAX'
@@ -32,7 +32,7 @@ const Pricing: React.FC<PricingProps> = ({ onNavigate, onUpgradeClick, isUpgradi
   };
 
   const handleUpgrade = () => {
-      const priceId = billingCycle === 'monthly' ? proPlan.monthly.id : proPlan.yearly.id;
+      const priceId = billingCycle === 'monthly' ? premiumPlan.monthly.id : premiumPlan.yearly.id;
       onUpgradeClick(priceId);
   };
 
@@ -47,24 +47,24 @@ const Pricing: React.FC<PricingProps> = ({ onNavigate, onUpgradeClick, isUpgradi
     // Set page-specific meta tags
     document.title = 'Pricing Plans | IndexFlow SEO Audit Tool';
     if (metaDescription) {
-      metaDescription.setAttribute('content', "Choose the best plan. Compare IndexFlow's Free & PRO plans for SEO audits and sitemap generation.");
+      metaDescription.setAttribute('content', "Choose the best plan. Compare IndexFlow's Free & Premium plans for SEO audits and sitemap generation.");
     }
     if (canonicalLink) {
         canonicalLink.setAttribute('href', 'https://indexflow.app/pricing');
     }
     
-    const scriptId = 'pro-plan-schema';
+    const scriptId = 'premium-plan-schema';
     const existingScript = document.getElementById(scriptId);
     if (existingScript) {
       existingScript.remove();
     }
 
-    const proPlanSchema = {
+    const premiumPlanSchema = {
       "@context": "https://schema.org",
       "@type": "Product",
-      "name": "IndexFlow PRO",
-      "description": "The PRO plan for professionals who need deeper SEO insights, unlimited analyses, and audit history tracking.",
-      "sku": "INDEXFLOW-PRO-MONTHLY",
+      "name": "IndexFlow Premium",
+      "description": "The Premium plan for professionals who need deeper SEO insights, unlimited analyses, and audit history tracking.",
+      "sku": "INDEXFLOW-PREMIUM-MONTHLY",
       "brand": {
         "@type": "Brand",
         "name": "IndexFlow"
@@ -95,7 +95,7 @@ const Pricing: React.FC<PricingProps> = ({ onNavigate, onUpgradeClick, isUpgradi
     const script = document.createElement('script');
     script.id = scriptId;
     script.type = 'application/ld+json';
-    script.text = JSON.stringify(proPlanSchema);
+    script.text = JSON.stringify(premiumPlanSchema);
     document.head.appendChild(script);
 
     const breadcrumbScriptId = 'breadcrumb-schema';
@@ -192,48 +192,48 @@ const Pricing: React.FC<PricingProps> = ({ onNavigate, onUpgradeClick, isUpgradi
                 </ul>
             </div>
 
-            {/* Pro Plan */}
+            {/* Premium Plan */}
             <div className="border-2 border-amber-400 rounded-xl p-8 flex flex-col relative ring-4 ring-amber-400/20">
                 <div className="flex items-center gap-3">
                   <TokenIcon className="w-8 h-8 text-amber-500" />
-                  <h3 className="text-2xl font-bold text-slate-800">PRO</h3>
+                  <h3 className="text-2xl font-bold text-slate-800">Premium</h3>
                 </div>
                 <p className="mt-2 text-slate-500">For professionals who need to dive deeper into their SEO.</p>
                 <div className="mt-6">
                     {billingCycle === 'monthly' ? (
                         <>
-                            <span className="text-4xl font-extrabold">${proPlan.monthly.price.toFixed(2)}</span>
+                            <span className="text-4xl font-extrabold">${premiumPlan.monthly.price.toFixed(2)}</span>
                             <span className="text-lg font-medium text-slate-500">/month</span>
                         </>
                     ) : (
                         <>
-                            <span className="text-4xl font-extrabold">${proPlan.yearly.price.toFixed(2)}</span>
+                            <span className="text-4xl font-extrabold">${premiumPlan.yearly.price.toFixed(2)}</span>
                             <span className="text-lg font-medium text-slate-500">/year</span>
-                            <p className="text-sm text-slate-500 mt-1">Billed annually. (${(proPlan.yearly.price / 12).toFixed(2)}/month)</p>
+                            <p className="text-sm text-slate-500 mt-1">Billed annually. (${(premiumPlan.yearly.price / 12).toFixed(2)}/month)</p>
                         </>
                     )}
                 </div>
                 <div className="relative group mt-6">
                     <button
                         onClick={handleUpgrade}
-                        disabled={isUpgrading || userPlan === 'PRO'}
+                        disabled={isUpgrading || userPlan === 'Premium'}
                         className={`w-full text-center px-6 py-3 font-semibold rounded-lg shadow-md transition-all text-white
-                            ${userPlan === 'PRO'
+                            ${userPlan === 'Premium'
                                 ? 'bg-gradient-to-r from-emerald-500 to-green-600 cursor-not-allowed'
                                 : 'bg-gradient-to-r from-amber-500 to-orange-600 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:from-amber-400 disabled:to-orange-500 disabled:cursor-wait disabled:opacity-80'
                             }
                         `}
-                        aria-describedby={userPlan === 'PRO' ? 'pro-tooltip' : undefined}
+                        aria-describedby={userPlan === 'Premium' ? 'premium-tooltip' : undefined}
                     >
-                        {userPlan === 'PRO' ? "You're on PRO" : isUpgrading ? 'Redirecting...' : 'Upgrade to PRO'}
+                        {userPlan === 'Premium' ? "You're on Premium" : isUpgrading ? 'Redirecting...' : 'Upgrade to Premium'}
                     </button>
-                    {userPlan === 'PRO' && (
+                    {userPlan === 'Premium' && (
                         <span
-                            id="pro-tooltip"
+                            id="premium-tooltip"
                             role="tooltip"
                             className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-3 py-1.5 text-sm font-light text-white bg-slate-800 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity duration-300 pointer-events-none"
                         >
-                            You are already subscribed to the PRO plan.
+                            You are already subscribed to the Premium plan.
                         </span>
                     )}
                 </div>

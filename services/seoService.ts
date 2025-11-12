@@ -12,7 +12,7 @@ const auditCheckSchema = {
     status: { type: Type.STRING, enum: [AuditStatus.OK, AuditStatus.Problem, AuditStatus.Info], description: 'The status of the audit check.' },
     value: { type: Type.STRING, description: 'The value found, e.g., the text of the title tag and its length.' },
     recommendation: { type: Type.STRING, description: 'Actionable advice for improvement.' },
-    tier: { type: Type.STRING, enum: ['FREE', 'PRO'], description: 'The plan tier this check belongs to. Key checks like title, meta, h1, status code are FREE. Others like images, OG tags are PRO.' },
+    tier: { type: Type.STRING, enum: ['FREE', 'Premium'], description: 'The plan tier this check belongs to. Key checks like title, meta, h1, status code are FREE. Others like images, OG tags are Premium.' },
   },
   required: ['id', 'title', 'status', 'value', 'recommendation', 'tier'],
 };
@@ -85,18 +85,18 @@ const seoResultsSchema = {
     },
     generatedMetaTags: {
       ...metaTagsSchema,
-      description: 'AI-generated meta tags for SEO. This field should only be populated for PRO plan users.',
+      description: 'AI-generated meta tags for SEO. This field should only be populated for Premium plan users.',
     },
     internalLinkAnalysis: {
         ...internalLinkAnalysisSchema,
-        description: 'An analysis of the internal linking strategy. This field should only be populated for PRO plan users.',
+        description: 'An analysis of the internal linking strategy. This field should only be populated for Premium plan users.',
     },
   },
   required: ['audit', 'sitemapXml', 'internalLinks'],
 };
 
 
-export const analyzeUrl = async (url: string, userPlan: 'FREE' | 'PRO'): Promise<SeoResults> => {
+export const analyzeUrl = async (url: string, userPlan: 'FREE' | 'Premium'): Promise<SeoResults> => {
     try {
         new URL(url); // Basic validation
     } catch (error) {
@@ -114,7 +114,7 @@ export const analyzeUrl = async (url: string, userPlan: 'FREE' | 'PRO'): Promise
                 - For the 'H2 Tags' check (id: 'h2Tags'), verify their presence. The value should report the count (e.g., "5 H2 tags found"). The status should be 'OK' if a reasonable number are found, or 'Info' if none are found. The recommendation should be: "Use H2 tags to break up your content into logical main sections. This improves readability and helps search engines understand your page structure."
                 - For the 'H3 Tags' check (id: 'h3Tags'), verify their presence. The value should report the count (e.g., "8 H3 tags found"). The status should be 'OK' if a reasonable number are found, or 'Info' if none are found. The recommendation should be: "Use H3 tags for subsections within your H2 sections. A clear heading hierarchy is crucial for user experience and SEO."
                 - For the 'Robots.txt' check, use the id 'robotsTxt'. Its status should typically be 'OK' with a value like 'robots.txt file found', but you can also generate a 'Problem' status if a robots.txt is missing. The recommendation should be 'Ensure your robots.txt file is correctly configured to guide search engine crawlers and is not blocking important content.'.
-            -   **PRO Tier Checks**: Include 'Image Alt Tags', 'Open Graph Tags', 'Mobile-Friendliness', 'Canonical Tag', 'Favicon', 'Core Web Vitals', 'Structured Data', 'Facebook Pixel', 'Broken Links', and 'Redirect Chains'.
+            -   **Premium Tier Checks**: Include 'Image Alt Tags', 'Open Graph Tags', 'Mobile-Friendliness', 'Canonical Tag', 'Favicon', 'Core Web Vitals', 'Structured Data', 'Facebook Pixel', 'Broken Links', and 'Redirect Chains'.
                 - For 'Image Alt Tags' (id: 'imageAltTags'), provide a count of images with missing alt tags (e.g., "3 of 15 images are missing alt tags"). The status should be 'Problem' if any are missing, and 'OK' otherwise. The recommendation must be: 'Ensure all images have descriptive alt text. This improves accessibility for visually impaired users and helps search engines understand image content.'
                 - For 'Open Graph Tags' (id: 'openGraphTags'), check for the presence of og:title, og:description, og:image, and og:url. The value should summarize the findings, like "Essential OG tags found" or "Missing og:image tag". The recommendation should state: "Open Graph tags control how your content appears when shared on social platforms like Facebook or LinkedIn. Complete OG tags lead to richer, more engaging posts and can significantly increase click-through rates."
                 - For 'Mobile-Friendliness', assess if the site is likely mobile-friendly based on common patterns; the value should be 'Likely mobile-friendly' or 'May not be mobile-friendly', with a recommendation to use responsive design and test across various devices.
@@ -124,14 +124,14 @@ export const analyzeUrl = async (url: string, userPlan: 'FREE' | 'PRO'): Promise
                 - For 'Facebook Pixel' (id: 'facebookPixel'), check for its presence. The value should be 'Facebook Pixel detected' or 'Facebook Pixel not detected'. The status should be 'OK' if found, and 'Info' if not. The recommendation should be: 'The Facebook Pixel allows you to measure, optimize, and build audiences for your ad campaigns. Installing it can provide valuable insights into user behavior and improve your ad targeting.'
                 - For 'Broken Links' (id: 'brokenLinks'), report a simulated count of broken links. The value should be like "2 broken links (404 errors) found" or "No broken links found." The status should be 'Problem' if any are found, and 'OK' otherwise. The recommendation must be: "Broken links create a poor user experience and can harm your SEO. Find and fix these links by updating the target URL or removing the link."
                 - For 'Redirect Chains' (id: 'redirectChains'), check for and report any redirect chains. The value can be "1 redirect chain detected" or "No redirect chains found." The status should be 'Problem' if chains are found, 'OK' otherwise. The recommendation should be: "Redirect chains increase page load time and can dilute link equity. Update the initial link to point directly to the final destination URL."
-                - Invent plausible but realistic data for the other PRO check ('Canonical Tag').
+                - Invent plausible but realistic data for the other Premium check ('Canonical Tag').
         2.  **Sitemap**: Your behavior here depends on the perceived size of the website at the given URL.
             -   **For most websites**: Generate a single, complete, valid XML sitemap as a string. Include the homepage and 4-5 other plausible internal pages (e.g., /about, /contact, /services).
             -   **For very large websites (e.g., major e-commerce sites, large publishers)**: Assume the site has over 50,000 URLs. In this case, instead of a regular sitemap, generate the content for a **sitemap index file**. This XML index file must be correctly formatted according to the sitemap protocol and should reference 2-3 plausible individual sitemap files (e.g., 'https://[domain]/sitemap_pages.xml', 'https://[domain]/sitemap_products.xml'). You do not need to generate the content of the individual sitemap files, only the index file itself.
         3.  **Internal Links**: Generate a list of the absolute URLs for the internal pages you included in the sitemap.
     `;
 
-    if (userPlan === 'PRO') {
+    if (userPlan === 'Premium') {
       prompt += `
         4.  **Meta Tag Generation**: Create SEO-optimized meta tags based on the likely content of the URL. This includes:
             - A compelling title tag (under 60 characters).
