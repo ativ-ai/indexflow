@@ -93,6 +93,11 @@ const About: React.FC = () => {
          <p className="text-lg">
             <strong>IndexFlow was born from a simple idea: SEO shouldn't be a mystery.</strong>
         </p>
+        <blockquote className="border-l-4 border-sky-200 pl-4 italic text-slate-700">
+            <p>
+                For entrepreneurs and creators, IndexFlow simplifies SEO. Our free AI tool delivers an instant audit and an XML sitemap, creating a clear action plan to improve your Google ranking and attract more customers.
+            </p>
+        </blockquote>
         <p>
             We believe that everyone—from small business owners and bloggers to marketing professionals and web developers—deserves access to clear, straightforward tools to improve their website's visibility on search engines. Too often, SEO is presented as a complex, jargon-filled discipline accessible only to experts. We're here to change that.
         </p>
