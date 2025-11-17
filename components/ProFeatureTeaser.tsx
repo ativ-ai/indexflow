@@ -7,7 +7,6 @@ interface ProFeatureTeaserProps {
   icon: React.ReactNode;
   title: string;
   description: string;
-  // FIX: Changed onUpgradeClick to accept a mouse event from a button.
   onUpgradeClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
