@@ -43,16 +43,27 @@ const LandingPage: React.FC<LandingPageProps> = ({ onAnalyze, onNavigate }) => {
         <div className="space-y-24 sm:space-y-32 animate-fade-in">
             {/* Hero Section */}
             <section className="relative text-center pt-16 pb-20">
-                 <div aria-hidden="true" className="absolute inset-0 -z-10">
-                    <div className="absolute top-0 left-1/4 w-96 h-96 bg-sky-200/50 rounded-full filter blur-3xl opacity-50 animate-blob"></div>
-                    <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-indigo-200/50 rounded-full filter blur-3xl opacity-50 animate-blob animation-delay-2000"></div>
+                <div className="hero-animation-background" aria-hidden="true">
+                    <div className="grid-lines"></div>
+                    {Array.from({ length: 50 }).map((_, i) => (
+                        <div
+                            key={i}
+                            className="data-beam"
+                            style={{
+                                left: `${Math.random() * 100}%`,
+                                height: `${Math.random() * 100 + 50}px`,
+                                animationDuration: `${Math.random() * 3 + 2}s`, // 2s to 5s duration
+                                animationDelay: `${Math.random() * 5}s`,
+                            }}
+                        />
+                    ))}
                 </div>
                 <div className="relative z-10">
-                    <h1 className="text-4xl sm:text-6xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                    <h1 className="text-4xl sm:text-6xl font-extrabold text-slate-50 tracking-tight leading-tight">
                         Instant SEO Insights. <br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-500 to-indigo-600">Perfect Sitemaps.</span>
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-indigo-500">Perfect Sitemaps.</span>
                     </h1>
-                    <p className="mt-6 text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto">
+                    <p className="mt-6 text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto">
                         Turn SEO guesswork into a clear action plan. Get a free, AI-powered audit and an XML sitemap in seconds.
                     </p>
                     <div className="mt-10 max-w-xl mx-auto">
@@ -76,7 +87,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onAnalyze, onNavigate }) => {
                                 Analyze for Free
                             </button>
                         </div>
-                         <p className="mt-4 text-xs text-slate-500">No credit card required. Start improving your rankings now.</p>
+                         <p className="mt-4 text-xs text-slate-400">No credit card required. Start improving your rankings now.</p>
                     </div>
                 </div>
             </section>
