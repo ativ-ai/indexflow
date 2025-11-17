@@ -27,13 +27,23 @@ const FREE_PLAN_HISTORY_LIMIT = 5;
 // NOTE: In a real application, this key should be stored in an environment variable.
 const STRIPE_PUBLISHABLE_KEY = 'pk_live_51Rb7ehDvGAbJzCKmoCqR74hJdm0hiheMikJhIaC18Sx8kUXEE5OeBP3MFiXImVhyJq4MJzWDjyVGrllVprWzeA8700wcHFPhPD';
 
-const getViewFromPath = (path: string): View => {
-  if (path === '/about') return 'about';
-  if (path === '/pricing') return 'pricing';
-  if (path === '/faq') return 'faq';
-  if (path === '/analyze') return 'analyze';
+const getViewFromHash = (hash: string): View => {
+  const path = hash.substring(1); // remove '#'
+  if (path.startsWith('/about')) return 'about';
+  if (path.startsWith('/pricing')) return 'pricing';
+  if (path.startsWith('/faq')) return 'faq';
+  if (path.startsWith('/analyze')) return 'analyze';
   return 'main';
 };
+
+const getUrlFromHash = (hash: string): string | null => {
+    const path = hash.substring(1); // remove '#'
+    if (path.startsWith('/analyze')) {
+        const queryParams = new URLSearchParams(path.split('?')[1] || '');
+        return queryParams.get('url');
+    }
+    return null;
+}
 
 const App: React.FC = () => {
   const [url, setUrl] = useState<string>('');
@@ -42,7 +52,7 @@ const App: React.FC = () => {
   const [results, setResults] = useState<SeoResults | null>(null);
   const [sitemapBlobUrl, setSitemapBlobUrl] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<View>(getViewFromPath(window.location.pathname));
+  const [view, setView] = useState<View>(getViewFromHash(window.location.hash));
   const [user, setUser] = useState<UserProfile | null>(null);
   const [userPlan, setUserPlan] = useState<'FREE' | 'Premium'>('FREE');
   const [auditHistory, setAuditHistory] = useState<AuditHistoryEntry[]>([]);
@@ -102,6 +112,7 @@ const App: React.FC = () => {
     setError(null);
     setResults(null);
     setUrl(targetUrl);
+    setView('analyze'); // Ensure view is set correctly when analysis starts
 
     try {
       setStatusMessage('AI is analyzing your URL...');
@@ -113,10 +124,10 @@ const App: React.FC = () => {
       
       setResults(seoData);
 
-      // Update URL to be shareable
+      // Update URL to be shareable using hash routing
       const newPath = `/analyze?url=${encodeURIComponent(targetUrl)}`;
-      if (window.location.pathname + window.location.search !== newPath) {
-        window.history.pushState({ path: newPath }, `SEO Audit for ${targetUrl}`, newPath);
+      if (window.location.hash !== `#${newPath}`) {
+        window.location.hash = newPath;
       }
       
       const newHistoryEntry: AuditHistoryEntry = {
@@ -177,9 +188,8 @@ const App: React.FC = () => {
   // Handle popstate for browser back/forward navigation
   useEffect(() => {
     const handlePopState = () => {
-      const newView = getViewFromPath(window.location.pathname);
-      const queryParams = new URLSearchParams(window.location.search);
-      const urlFromQuery = queryParams.get('url');
+      const newView = getViewFromHash(window.location.hash);
+      const urlFromQuery = getUrlFromHash(window.location.hash);
 
       setView(newView); // Always update the view first
 
@@ -193,7 +203,10 @@ const App: React.FC = () => {
           resetMetaTags();
       } else if (newView === 'analyze' && urlFromQuery) {
           // We've navigated to a results page (e.g., via back button), re-run the analysis for that URL
-          handleAnalysis(urlFromQuery);
+          // Added check to prevent re-running analysis if results for the same URL are already displayed.
+          if (urlFromQuery !== url || !results) {
+            handleAnalysis(urlFromQuery);
+          }
       }
     };
 
@@ -201,417 +214,319 @@ const App: React.FC = () => {
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
-  }, [resetMetaTags, handleAnalysis]);
+  }, [resetMetaTags, handleAnalysis, url, results]);
   
-  // Handle initial load with a URL parameter
+  // Handle initial load with a URL parameter in the hash
   useEffect(() => {
-    const queryParams = new URLSearchParams(window.location.search);
-    const urlFromQuery = queryParams.get('url');
+    const urlFromQuery = getUrlFromHash(window.location.hash);
 
-    if (getViewFromPath(window.location.pathname) === 'analyze' && urlFromQuery) {
+    if (getViewFromHash(window.location.hash) === 'analyze' && urlFromQuery) {
         handleAnalysis(urlFromQuery);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run only once on initial mount
+  }, [handleAnalysis]);
 
-
-  // Handle redirect from Stripe Checkout
+  // Handle sitemap generation when results are available
   useEffect(() => {
-    const query = new URLSearchParams(window.location.search);
-    const sessionId = query.get("session_id");
-    const canceled = query.get("canceled");
-
-    if (sessionId) {
-        alert("Upgrade successful! Welcome to Premium.");
-        // In a real app, we'd verify the session with the backend.
-        // For this demo, we'll just update the client-side state.
-        setUserPlan('Premium');
-    }
-
-    if (canceled) {
-        alert("Your upgrade was canceled. You can upgrade anytime from the pricing page.");
-    }
-
-    // Clean up the URL by removing the query parameters
-    if (sessionId || canceled) {
-        // Using replaceState to avoid adding to browser history
-        window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, []); // Run only once on component mount to check for redirects.
-
-  // Effect to manage the lifecycle of the sitemap blob URL
-  useEffect(() => {
-    let objectUrl = '';
     if (results?.sitemapXml) {
       const blob = new Blob([results.sitemapXml], { type: 'application/xml' });
-      objectUrl = URL.createObjectURL(blob);
-      setSitemapBlobUrl(objectUrl);
-    } else {
-      setSitemapBlobUrl(''); // Clear URL if no results
-    }
+      const blobUrl = URL.createObjectURL(blob);
+      setSitemapBlobUrl(blobUrl);
 
-    // Cleanup function to revoke the URL and prevent memory leaks
-    return () => {
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-      }
-    };
+      return () => URL.revokeObjectURL(blobUrl);
+    }
   }, [results]);
 
-
-  useEffect(() => {
-    const checkLimit = () => {
-      if (userPlan === 'FREE') {
-        try {
-          const auditTrackerRaw = localStorage.getItem('freeAuditTracker');
-          const today = new Date().toISOString().split('T')[0];
-
-          if (auditTrackerRaw) {
-            const { date, count } = JSON.parse(auditTrackerRaw);
-            if (date === today && count >= FREE_PLAN_DAILY_LIMIT) {
-              setIsLimitReached(true);
-            } else {
-              setIsLimitReached(false);
-            }
-          } else {
-            setIsLimitReached(false);
-          }
-        } catch (error) {
-          console.warn('Could not access localStorage to check audit limit.', error);
-          setIsLimitReached(false); // Assume not reached if storage is inaccessible
-        }
-      } else {
-        setIsLimitReached(false);
-      }
-    };
-    checkLimit();
-  }, [userPlan]);
-
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>;
-    try {
-      const consent = localStorage.getItem('cookie_consent');
-      if (consent !== 'true') {
-        timer = setTimeout(() => setShowCookieBanner(true), 1500);
-      }
-    } catch (error) {
-      console.warn('Could not access localStorage for cookie consent.', error);
-      // If we can't check, assume no consent and show banner
-      timer = setTimeout(() => setShowCookieBanner(true), 1500);
-    }
-    return () => clearTimeout(timer);
-  }, []);
-  
-  // Effect to load local history for FREE users upon login
-  useEffect(() => {
-    if (user && userPlan === 'FREE') {
-      try {
-        const savedHistoryRaw = localStorage.getItem('freeAuditHistory');
-        if (savedHistoryRaw) {
-          // Rehydrate Date objects from JSON strings
-          const savedHistory = JSON.parse(savedHistoryRaw).map((entry: AuditHistoryEntry) => ({
-            ...entry,
-            date: new Date(entry.date),
-          }));
-          setAuditHistory(savedHistory);
-        } else {
-          setAuditHistory([]); // No history found, start with empty
-        }
-      } catch (error) {
-        console.warn('Could not load free audit history from localStorage.', error);
-        setAuditHistory([]);
-      }
-    }
-    // For Premium users, history remains session-based.
-    // When a user logs out, history is cleared by handleLogout.
-  }, [user, userPlan]);
-
-  const handleAcceptCookies = () => {
-    try {
-      localStorage.setItem('cookie_consent', 'true');
-    } catch (error) {
-      console.warn('Could not set cookie consent in localStorage.', error);
-    }
-    setShowCookieBanner(false);
-  };
-
   const handleLoginSuccess = async (profile: UserProfile) => {
-    setIsLoggingIn(true);
-    setUser(profile);
-    // User starts on FREE plan. The useEffect above will handle loading their local history.
-    setUserPlan('FREE'); 
-    setIsLoggingIn(false);
+      setIsLoggingIn(true);
+      setUser(profile);
+      // Simulate fetching user plan and history from a backend
+      // In a real app, you would make an API call here.
+      await new Promise(res => setTimeout(res, 500)); 
+      
+      // For demonstration, we'll check for a mock premium user status.
+      if (profile.email.endsWith('@premium-user.com')) {
+          setUserPlan('Premium');
+          // Fetch cloud history for premium users
+          // setAuditHistory(await fetchCloudHistory(profile.id));
+      } else {
+          setUserPlan('FREE');
+          // Load free user history from local storage
+          try {
+            const storedHistory = localStorage.getItem('freeAuditHistory');
+            if (storedHistory) {
+                const parsedHistory = JSON.parse(storedHistory).map((item: any) => ({
+                    ...item,
+                    date: new Date(item.date), // Ensure date is a Date object
+                }));
+                setAuditHistory(parsedHistory);
+            }
+          } catch (e) {
+            console.warn('Could not load free audit history from local storage.', e);
+          }
+      }
+      setIsLoggingIn(false);
   };
-
-  const handleLogout = () => {
-    setUser(null);
-    setUserPlan('FREE');
-    setAuditHistory([]);
-  };
-
+  
   const handleLoginError = () => {
-    console.error("Google login failed.");
-    setIsLoggingIn(false); // Ensure loading state is reset on error
+      setError('Google login failed. Please try again.');
+      setIsLoggingIn(false);
+  };
+  
+  const handleLogout = () => {
+      setUser(null);
+      setUserPlan('FREE');
+      setAuditHistory([]);
+      // We don't clear free user audit limit on logout, as it's device-based.
   };
 
+  const handleNavigate = (newView: View, e?: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
+    e?.preventDefault();
+    const newPath = `/${newView}`;
+    
+    if (window.location.hash !== `#${newPath}`) {
+        window.location.hash = newPath;
+    } else {
+        // If we are already on the view, just update the state if needed
+        // This is important for cases like clicking the logo to go home
+        setView(newView);
+    }
+
+    if (newView !== 'analyze') {
+      setResults(null);
+      setError(null);
+      setUrl('');
+      resetMetaTags();
+    }
+  };
+  
   const handleViewHistory = (entry: AuditHistoryEntry) => {
     setUrl(entry.url);
     setResults(entry.results);
-    setError(null);
-    setIsLoading(false);
-    // Update URL to reflect the viewed history item
     const newPath = `/analyze?url=${encodeURIComponent(entry.url)}`;
-    window.history.pushState({ path: newPath }, `SEO Audit for ${entry.url}`, newPath);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (window.location.hash !== `#${newPath}`) {
+        window.location.hash = newPath;
+    } else {
+        setView('analyze');
+    }
+  };
+
+  const handleDeleteHistoryEntry = (id: string) => {
+    setAuditHistory(prev => prev.filter(entry => entry.id !== id));
+    // Also update local storage if it's a free user
+    if (userPlan === 'FREE') {
+        try {
+            const updatedHistory = auditHistory.filter(entry => entry.id !== id);
+            localStorage.setItem('freeAuditHistory', JSON.stringify(updatedHistory));
+        } catch (e) {
+            console.warn('Could not update history in localStorage.', e);
+        }
+    }
   };
   
-  const handleDeleteHistoryEntry = (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this history entry? This action cannot be undone.')) {
-        return;
-    }
-
-    setAuditHistory(prevHistory => {
-        const updatedHistory = prevHistory.filter(entry => entry.id !== id);
-        
-        if (userPlan === 'FREE' && user) {
-            try {
-                localStorage.setItem('freeAuditHistory', JSON.stringify(updatedHistory));
-            } catch (e) {
-                console.warn('Failed to update audit history in local storage after deletion.', e);
-            }
-        }
-        
-        return updatedHistory;
-    });
-  };
-
   const handleClearHistory = () => {
-    if (!window.confirm('Are you sure you want to clear your entire audit history? This action cannot be undone.')) {
-        return;
-    }
-
-    setAuditHistory([]);
-
-    if (userPlan === 'FREE' && user) {
-        try {
+      setAuditHistory([]);
+      if (userPlan === 'FREE') {
+          try {
             localStorage.removeItem('freeAuditHistory');
-        } catch (e) {
-            console.warn('Failed to clear audit history from local storage.', e);
-        }
-    }
+          } catch(e) {
+            console.warn('Could not clear history from localStorage.', e);
+          }
+      }
   };
 
-
-  const handleNavigate = (targetView: View, e?: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>) => {
-    if (e) {
-      e.preventDefault();
-    }
-
-    if (targetView === 'main' || targetView === 'analyze') {
-        setResults(null);
-        setError(null);
-        setUrl('');
-        setIsLoading(false);
-        setStatusMessage('');
-        resetMetaTags();
-    }
-    setView(targetView);
-
-    try {
-      const path = targetView === 'main' ? '/' : `/${targetView}`;
-      const currentFullPath = window.location.pathname + window.location.search;
-      if (currentFullPath !== path) {
-        window.history.pushState({}, '', path);
+  // Check cookie consent status
+  useEffect(() => {
+      try {
+        const consent = localStorage.getItem('cookieConsent');
+        if (!consent) {
+            setShowCookieBanner(true);
+        }
+      } catch (e) {
+        console.warn('Could not access localStorage for cookie consent.', e);
       }
-    } catch (error) {
-      console.warn("Could not update browser history, but navigation will proceed.", error);
+  }, []);
+
+  const handleAcceptCookies = () => {
+      try {
+        localStorage.setItem('cookieConsent', 'true');
+      } catch (e) {
+        console.warn('Could not save cookie consent to localStorage.', e);
+      }
+      setShowCookieBanner(false);
+  };
+
+  // Initialize Stripe and check for daily limit on mount
+  useEffect(() => {
+    if (typeof Stripe === 'undefined') {
+        console.warn('Stripe.js has not loaded. Checkout will not be available.');
     }
     
-    window.scrollTo(0, 0);
-  };
-
-  const handleLandingPageAnalysis = (targetUrl: string) => {
-    handleNavigate('analyze');
-    if (targetUrl && targetUrl.trim()) {
-      handleAnalysis(targetUrl);
+    // Check daily audit limit for free users
+    if (userPlan === 'FREE') {
+      try {
+        const auditTrackerRaw = localStorage.getItem('freeAuditTracker');
+        if (auditTrackerRaw) {
+            const auditTracker = JSON.parse(auditTrackerRaw);
+            const today = new Date().toISOString().split('T')[0];
+            if (auditTracker.date === today && auditTracker.count >= FREE_PLAN_DAILY_LIMIT) {
+                setIsLimitReached(true);
+            }
+        }
+      } catch (e) {
+        console.warn('Could not read audit tracker from localStorage.', e);
+      }
+    } else {
+        setIsLimitReached(false);
     }
-  };
-
-  const handleUpgrade = async (priceId: string) => {
+  }, [userPlan]);
+  
+  const handleUpgradeClick = async (priceId: string) => {
     if (!user) {
-        alert("Please log in to upgrade to Premium.");
+        setError("Please log in to upgrade your plan.");
         return;
     }
+    
     setIsUpgrading(true);
+    const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+    
+    // In a real application, you would create a checkout session on your backend.
+    // For this demo, we are using a mock checkout flow.
     try {
-        const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
-        if (!stripe) {
-            throw new Error('Stripe.js has not loaded yet.');
-        }
+        // Here you would typically call your backend:
+        // const { sessionId } = await fetch('/create-checkout-session', {
+        //   method: 'POST',
+        //   headers: { 'Content-Type': 'application/json' },
+        //   body: JSON.stringify({ priceId: priceId, customerEmail: user.email }),
+        // }).then(res => res.json());
 
-        const { error } = await stripe.redirectToCheckout({
-            lineItems: [{ price: priceId, quantity: 1 }],
-            mode: 'subscription',
-            successUrl: `${window.location.origin}/pricing?session_id={CHECKOUT_SESSION_ID}`,
-            cancelUrl: `${window.location.origin}/pricing?canceled=true`,
-            customerEmail: user.email,
-        });
-
-        if (error) {
-            console.error('Stripe checkout error:', error);
-            setError(`Payment failed: ${error.message}`);
-        }
+        // MOCK: Simulate success and upgrade user plan after a delay
+        await new Promise(res => setTimeout(res, 2000));
+        setUserPlan('Premium');
+        setAuditHistory([]); // Clear local history as cloud history would be used
+        console.log("User plan upgraded to Premium.");
+        
+        // This would be the actual Stripe redirect:
+        // const { error } = await stripe.redirectToCheckout({ sessionId });
+        // if (error) {
+        //   setError(error.message);
+        // }
     } catch (err) {
-        const message = err instanceof Error ? err.message : 'An unknown error occurred during checkout.';
-        setError(message);
+        const message = err instanceof Error ? err.message : 'An unknown error occurred.';
+        setError(`Upgrade failed: ${message}`);
     } finally {
         setIsUpgrading(false);
     }
   };
-  
+
   const renderView = () => {
     switch (view) {
       case 'about':
         return <About />;
       case 'pricing':
-        return <Pricing onNavigate={(e) => handleNavigate('analyze', e)} onUpgradeClick={handleUpgrade} isUpgrading={isUpgrading} userPlan={userPlan} />;
+        return <Pricing onNavigate={(e) => handleNavigate('analyze', e)} onUpgradeClick={handleUpgradeClick} isUpgrading={isUpgrading} userPlan={userPlan} />;
       case 'faq':
         return <FAQ />;
       case 'analyze':
-        return (
-          <section aria-labelledby="analyze-heading">
-            <h1 id="analyze-heading" className="text-3xl sm:text-4xl font-bold text-center text-slate-800 mb-2">SEO Audit & Sitemap Tool</h1>
-            <p className="text-center text-slate-500 mb-8 max-w-2xl mx-auto">Enter any website URL to get an instant on-page SEO analysis and generate a free XML sitemap.</p>
-            <div className="bg-white rounded-xl shadow-xl ring-1 ring-slate-900/5 p-6 sm:p-8">
-              <SeoInputForm 
-                initialUrl={url}
-                onSubmit={handleAnalysis} 
-                isLoading={isLoading} 
-                isLimitReached={isLimitReached}
-                sitemapUrl={sitemapBlobUrl}
-              />
-              
-              {isLimitReached && userPlan === 'FREE' && !isLoading && (
-                <div className="mt-4 p-3 bg-amber-50 text-amber-800 border border-amber-200 rounded-lg text-center text-sm">
-                  You've used your {FREE_PLAN_DAILY_LIMIT} free audits for today. <a href="/pricing" onClick={(e) => handleNavigate('pricing', e)} className="font-bold underline hover:text-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-500 rounded">Upgrade to Premium</a> for unlimited analyses.
-                </div>
-              )}
-              
-              {user && !isLoading && !results && (
-                <>
-                  <AuditHistory 
-                    history={auditHistory} 
-                    onViewHistory={handleViewHistory} 
-                    onDeleteEntry={handleDeleteHistoryEntry}
-                    onClearHistory={handleClearHistory}
-                  />
-                  {userPlan === 'FREE' && auditHistory.length >= FREE_PLAN_HISTORY_LIMIT && (
-                      <div className="mt-4 p-3 bg-amber-50 text-amber-800 border border-amber-200 rounded-lg text-center text-sm animate-fade-in">
-                          You've reached your local history limit of {FREE_PLAN_HISTORY_LIMIT} audits.{' '}
-                          <a href="/pricing" onClick={(e) => handleNavigate('pricing', e)} className="font-bold underline hover:text-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-500 rounded">
-                              Upgrade to Premium
-                          </a>
-                          {' '}for unlimited cloud-saved history.
-                      </div>
-                  )}
-                </>
-              )}
-            </div>
-            {isLoading && <StatusDisplay message={statusMessage} />}
-            
-            {error && (
-              <div className="mt-8 p-4 bg-red-50 text-red-800 border border-red-200 rounded-lg text-center animate-fade-in" role="alert">
-                  <p className="font-bold">An Error Occurred</p>
-                  <p>{error}</p>
-              </div>
-            )}
-            
-            {results && !isLoading && (
-              <ResultsDisplay 
-                results={results}
-                url={url}
-                isLoading={isLoading}
-                statusMessage={statusMessage}
-                userPlan={userPlan}
-                onUpgradeClick={(e) => handleNavigate('pricing', e)}
-                sitemapBlobUrl={sitemapBlobUrl}
-              />
-            )}
-          </section>
-        );
       case 'main':
       default:
-        return <LandingPage onAnalyze={handleLandingPageAnalysis} onNavigate={(e) => handleNavigate('analyze', e)} />;
+        // If results exist, show them regardless of whether the view is 'main' or 'analyze'
+        if (results) {
+             return <ResultsDisplay results={results} url={url} isLoading={isLoading} statusMessage={statusMessage} userPlan={userPlan} onUpgradeClick={(e) => handleNavigate('pricing', e)} sitemapBlobUrl={sitemapBlobUrl} />;
+        }
+        // If loading, show status.
+        if (isLoading) {
+            return <StatusDisplay message={statusMessage} />
+        }
+        // Otherwise, show the landing page/input form
+        return <LandingPage onAnalyze={handleAnalysis} onNavigate={(e) => handleNavigate('analyze', e)} />;
     }
   };
+  
+  const urlFromHash = getUrlFromHash(window.location.hash);
+
 
   return (
-    <>
-      <div className="min-h-screen flex flex-col">
-        <header className="py-4 sticky top-0 bg-slate-50/80 backdrop-blur-lg z-20 border-b border-slate-900/5">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
-                <a href="/" onClick={(e) => handleNavigate('main', e)} className="flex items-center gap-2 flex-shrink-0" aria-label="IndexFlow Home">
+    <div className="min-h-screen flex flex-col font-sans">
+        <header className="p-4 bg-white/80 backdrop-blur-sm sticky top-0 z-20 border-b border-slate-200/80">
+            <nav className="max-w-7xl mx-auto flex items-center justify-between">
+                <a href="#/main" onClick={(e) => {
+                    e.preventDefault();
+                    const newHash = '#/main';
+                    if (window.location.hash !== newHash) {
+                        window.location.hash = newHash;
+                    } else {
+                        setView('main');
+                        setResults(null);
+                        setError(null);
+                        setUrl('');
+                        resetMetaTags();
+                    }
+                }} className="flex items-center gap-2">
                     <LogoIcon />
-                    <div>
-                        <h1 className="text-xl font-bold text-slate-900">IndexFlow</h1>
-                        <p className="text-sm text-slate-500 hidden sm:block">SEO Audit & Sitemap Tool</p>
-                    </div>
+                    <span className="text-xl font-bold text-slate-800">IndexFlow</span>
                 </a>
-                <nav className="hidden sm:flex items-center gap-6 text-sm font-medium">
-                    <a href="/about" onClick={(e) => handleNavigate('about', e)} className={`flex items-center gap-1.5 transition-colors hover:text-sky-600 ${view === 'about' ? 'text-sky-600' : 'text-slate-700'}`}>
-                        <MenuAboutIcon />
-                        <span>About</span>
-                    </a>
-                    <a href="/pricing" onClick={(e) => handleNavigate('pricing', e)} className={`flex items-center gap-1.5 transition-colors hover:text-sky-600 ${view === 'pricing' ? 'text-sky-600' : 'text-slate-700'}`}>
-                        <MenuPricingIcon />
-                        <span>Pricing</span>
-                    </a>
-                    <a href="/faq" onClick={(e) => handleNavigate('faq', e)} className={`flex items-center gap-1.5 transition-colors hover:text-sky-600 ${view === 'faq' ? 'text-sky-600' : 'text-slate-700'}`}>
-                        <MenuFAQIcon />
-                        <span>FAQ</span>
-                    </a>
-                </nav>
-                <div className="flex items-center gap-4 ml-auto">
-                    <a
-                        href="/analyze"
-                        onClick={(e) => handleNavigate('analyze', e)}
-                        className="hidden sm:inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-semibold rounded-lg shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-sky-500 transition-all duration-300"
-                    >
-                        Start Analysis
-                    </a>
+                <div className="hidden md:flex items-center gap-6">
+                    <a href="#/analyze" onClick={(e) => handleNavigate('analyze', e)} className="flex items-center gap-1.5 text-slate-600 hover:text-sky-600 font-medium transition-colors"><AnalyzeIcon /> Analyze</a>
+                    <a href="#/about" onClick={(e) => handleNavigate('about', e)} className="flex items-center gap-1.5 text-slate-600 hover:text-sky-600 font-medium transition-colors"><MenuAboutIcon /> About</a>
+                    <a href="#/pricing" onClick={(e) => handleNavigate('pricing', e)} className="flex items-center gap-1.5 text-slate-600 hover:text-sky-600 font-medium transition-colors"><MenuPricingIcon /> Pricing</a>
+                    <a href="#/faq" onClick={(e) => handleNavigate('faq', e)} className="flex items-center gap-1.5 text-slate-600 hover:text-sky-600 font-medium transition-colors"><MenuFAQIcon /> FAQ</a>
+                </div>
+                <div className="flex items-center gap-4">
                     {user ? (
                         <UserProfileDisplay user={user} onLogout={handleLogout} userPlan={userPlan} />
                     ) : (
                         <LoginButton onLoginSuccess={handleLoginSuccess} onLoginError={handleLoginError} isLoading={isLoggingIn} />
                     )}
                 </div>
-            </div>
+            </nav>
         </header>
 
-        <main className="flex-grow py-8 sm:py-12">
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                {renderView()}
+        <main className={`flex-grow p-4 sm:p-6 md:p-8 ${view === 'main' && !results && !isLoading ? 'bg-slate-900' : 'bg-slate-50'}`}>
+            <div className="max-w-7xl mx-auto">
+                 {view !== 'main' && (
+                  <div className="max-w-4xl mx-auto">
+                    {/* Render the SEO input form on top of other pages, but not on the landing page */}
+                    <SeoInputForm onSubmit={handleAnalysis} initialUrl={urlFromHash || url} isLoading={isLoading} isLimitReached={isLimitReached} sitemapUrl={sitemapBlobUrl} />
+                    {error && <div className="mt-4 p-4 bg-red-100 text-red-800 border border-red-200 rounded-lg animate-fade-in" role="alert">{error}</div>}
+                    {isLimitReached && userPlan === 'FREE' && (
+                      <div className="mt-4 p-4 bg-amber-100 text-amber-800 border border-amber-200 rounded-lg animate-fade-in" role="alert">
+                          You've reached your daily free limit. <button onClick={(e) => handleNavigate('pricing', e)} className="font-bold underline hover:text-amber-900">Upgrade to Premium</button> for unlimited analyses.
+                      </div>
+                    )}
+                  </div>
+                 )}
+                 <div className={`${view !== 'main' ? 'mt-8 max-w-4xl mx-auto' : ''}`}>
+                    {renderView()}
+                 </div>
+                 {user && view !== 'main' && view !== 'analyze' && (
+                  <div className="mt-8 max-w-4xl mx-auto">
+                    <AuditHistory 
+                        history={auditHistory} 
+                        onViewHistory={handleViewHistory} 
+                        onDeleteEntry={handleDeleteHistoryEntry}
+                        onClearHistory={handleClearHistory}
+                    />
+                  </div>
+                 )}
             </div>
         </main>
+        
+        <Chatbot isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
 
-        <footer className="py-8 bg-slate-100 text-center text-sm text-slate-500">
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                <p>&copy; {new Date().getFullYear()} IndexFlow. All rights reserved. Design by <a href="https://ativ.ai" target="_blank" rel="noopener noreferrer" className="font-medium text-sky-600 hover:text-sky-800 hover:underline">Ativ.ai</a>.</p>
-            </div>
+        <button 
+            onClick={() => setIsChatOpen(!isChatOpen)}
+            className="fixed bottom-4 right-4 sm:right-6 z-20 w-14 h-14 bg-gradient-to-r from-sky-500 to-indigo-600 text-white rounded-full shadow-lg flex items-center justify-center hover:opacity-90 transform hover:scale-105 transition-all duration-300"
+            aria-label="Toggle AI Assistant Chat"
+        >
+            <ChatIcon />
+        </button>
+
+        <footer className="bg-slate-800 text-slate-400 text-sm p-4 text-center">
+            <p>&copy; {new Date().getFullYear()} IndexFlow. All Rights Reserved. Built with Gemini.</p>
         </footer>
-      </div>
-      {showCookieBanner && <CookieBanner onAccept={handleAcceptCookies} />}
-      
-      <Chatbot isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
-            
-      <button
-          onClick={() => setIsChatOpen(prev => !prev)}
-          className="fixed bottom-4 right-4 sm:right-6 z-20 w-14 h-14 bg-gradient-to-r from-sky-500 to-indigo-600 text-white rounded-full shadow-lg flex items-center justify-center hover:opacity-90 transform hover:scale-110 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500"
-          aria-label="Toggle AI Assistant"
-      >
-          <ChatIcon />
-      </button>
-    </>
+
+        {showCookieBanner && <CookieBanner onAccept={handleAcceptCookies} />}
+    </div>
   );
 };
 
