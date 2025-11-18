@@ -1,3 +1,4 @@
+
 import React, { useEffect, useMemo, useState } from 'react';
 import { SearchIcon } from './Icons';
 
@@ -230,7 +231,7 @@ const FAQ: React.FC = () => {
 
   return (
     <section aria-labelledby="faq-heading" className="bg-white rounded-xl shadow-xl ring-1 ring-slate-900/5 p-6 sm:p-8 animate-fade-in">
-      <h1 id="faq-heading" className="text-3xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-sky-500 to-indigo-600">Frequently Asked Questions</h1>
+      <h1 id="faq-heading" className="text-3xl font-bold mb-4 text-slate-900">Frequently Asked Questions</h1>
       
       <div className="relative mb-6 max-w-lg mx-auto">
           <label htmlFor="faq-search" className="sr-only">Search FAQs</label>
@@ -243,7 +244,7 @@ const FAQ: React.FC = () => {
               id="faq-search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-md leading-5 bg-white placeholder-slate-500 focus:outline-none focus:placeholder-slate-400 focus:ring-1 focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
+              className="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-md leading-5 bg-white placeholder-slate-500 focus:outline-none focus:placeholder-slate-400 focus:ring-1 focus:ring-sky-600 focus:border-sky-600 sm:text-sm"
               placeholder="Search FAQs..."
           />
       </div>

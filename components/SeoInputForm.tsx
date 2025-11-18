@@ -78,7 +78,7 @@ const SeoInputForm: React.FC<SeoInputFormProps> = ({ initialUrl, onSubmit, isLoa
             className={`w-full px-4 py-3 bg-white text-slate-800 border rounded-lg transition-all duration-300 placeholder-slate-400 ${
               validationError
                 ? 'border-red-500 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500'
-                : 'border-slate-300 focus:ring-2 focus:ring-sky-500 focus:border-sky-500'
+                : 'border-slate-300 focus:ring-2 focus:ring-sky-600 focus:border-sky-600'
             }`}
             disabled={isLoading || isLimitReached}
             aria-label="Website URL to analyze"
@@ -95,7 +95,7 @@ const SeoInputForm: React.FC<SeoInputFormProps> = ({ initialUrl, onSubmit, isLoa
       <button
         type="submit"
         disabled={isLoading || isLimitReached}
-        className="w-full sm:w-auto flex-shrink-0 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-semibold rounded-lg shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-sky-500 transition-all duration-300 disabled:from-slate-400 disabled:to-slate-500 disabled:cursor-not-allowed"
+        className="w-full sm:w-auto flex-shrink-0 flex items-center justify-center gap-2 px-6 py-3 bg-sky-600 text-white font-semibold rounded-lg shadow-md hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-sky-600 transition-all duration-300 disabled:bg-slate-400 disabled:cursor-not-allowed"
       >
         <AnalyzeIcon />
         <span>{isLimitReached ? 'Limit Reached' : isLoading ? 'Analyzing...' : 'Start Analysis'}</span>
@@ -106,7 +106,7 @@ const SeoInputForm: React.FC<SeoInputFormProps> = ({ initialUrl, onSubmit, isLoa
             target="_blank"
             rel="noopener noreferrer"
             download="sitemap.xml"
-            className="w-full sm:w-auto flex-shrink-0 flex items-center justify-center px-6 py-3 bg-white text-slate-700 font-semibold border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition-all duration-300 animate-fade-in"
+            className="w-full sm:w-auto flex-shrink-0 flex items-center justify-center px-6 py-3 bg-white text-slate-700 font-semibold border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-600 transition-all duration-300 animate-fade-in"
           >
             View Sitemap
           </a>

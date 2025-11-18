@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { InternalLinkAnalysis } from '../types';
 import { LinkIcon, OrphanIcon, LightbulbIcon } from './Icons';
 
@@ -18,7 +19,7 @@ const InternalLinkAnalysisDisplay: React.FC<InternalLinkAnalysisDisplayProps> = 
                 <div className="text-sky-600 h-8 w-8">
                     <LinkIcon /> 
                 </div>
-                <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-sky-500 to-indigo-600">Internal Link Optimization</h2>
+                <h2 className="text-3xl font-bold text-slate-900">Internal Link Optimization</h2>
             </div>
             <div className="bg-slate-100/50 rounded-lg p-6 border border-slate-200 space-y-8">
                 <p className="text-slate-600 leading-relaxed">

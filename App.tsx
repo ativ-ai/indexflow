@@ -1,5 +1,3 @@
-
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { SeoResults, UserProfile, AuditHistoryEntry } from './types';
 import { analyzeUrl } from './services/seoService';
@@ -48,6 +46,7 @@ const getUrlFromHash = (hash: string): string | null => {
 const App: React.FC = () => {
   const [url, setUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [loadingStage, setLoadingStage] = useState<'analyzing' | 'generating'>('analyzing');
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [results, setResults] = useState<SeoResults | null>(null);
   const [sitemapBlobUrl, setSitemapBlobUrl] = useState<string>('');
@@ -62,6 +61,8 @@ const App: React.FC = () => {
   const [isUpgrading, setIsUpgrading] = useState<boolean>(false);
   const [initialMetas, setInitialMetas] = useState({ title: '', description: '' });
   const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
+  // New state to track if the current result is a fresh analysis (for animation)
+  const [isFreshAnalysis, setIsFreshAnalysis] = useState<boolean>(false);
 
 
   // Store initial meta tags from index.html on first load
@@ -109,18 +110,25 @@ const App: React.FC = () => {
     }
 
     setIsLoading(true);
+    setLoadingStage('analyzing');
     setError(null);
     setResults(null);
     setUrl(targetUrl);
+    setIsFreshAnalysis(true); // Mark as fresh for animation
     setView('analyze'); // Ensure view is set correctly when analysis starts
 
     try {
-      setStatusMessage('AI is analyzing your URL...');
+      setStatusMessage('Initializing Analysis Engine...');
       
+      // Step 1: Perform Analysis
       const seoData = await analyzeUrl(targetUrl, userPlan);
       
-      setStatusMessage('Analysis complete!');
-      await new Promise(res => setTimeout(res, 500)); // Short delay for smooth UI transition
+      // Step 2: Report Generation Animation
+      setLoadingStage('generating');
+      setStatusMessage('Analysis Complete. Compiling Report...');
+      
+      // Reduced delay to 1.5s to transition to "Generative UI" faster
+      await new Promise(res => setTimeout(res, 1500)); 
       
       setResults(seoData);
 
@@ -206,6 +214,9 @@ const App: React.FC = () => {
           // Added check to prevent re-running analysis if results for the same URL are already displayed.
           if (urlFromQuery !== url || !results) {
             handleAnalysis(urlFromQuery);
+          } else {
+            // If revisiting same result via history/back, don't re-animate
+            setIsFreshAnalysis(false);
           }
       }
     };
@@ -300,6 +311,7 @@ const App: React.FC = () => {
   };
   
   const handleViewHistory = (entry: AuditHistoryEntry) => {
+    setIsFreshAnalysis(false); // Disable animation for history view
     setUrl(entry.url);
     setResults(entry.results);
     const newPath = `/analyze?url=${encodeURIComponent(entry.url)}`;
@@ -431,11 +443,22 @@ const App: React.FC = () => {
       default:
         // If results exist, show them regardless of whether the view is 'main' or 'analyze'
         if (results) {
-             return <ResultsDisplay results={results} url={url} isLoading={isLoading} statusMessage={statusMessage} userPlan={userPlan} onUpgradeClick={(e) => handleNavigate('pricing', e)} sitemapBlobUrl={sitemapBlobUrl} />;
+             return (
+                <ResultsDisplay 
+                    results={results} 
+                    url={url} 
+                    isLoading={isLoading} 
+                    statusMessage={statusMessage} 
+                    userPlan={userPlan} 
+                    onUpgradeClick={(e) => handleNavigate('pricing', e)} 
+                    sitemapBlobUrl={sitemapBlobUrl} 
+                    isFreshAnalysis={isFreshAnalysis}
+                />
+             );
         }
         // If loading, show status.
         if (isLoading) {
-            return <StatusDisplay message={statusMessage} />
+            return <StatusDisplay message={statusMessage} stage={loadingStage} />
         }
         // Otherwise, show the landing page/input form
         return <LandingPage onAnalyze={handleAnalysis} onNavigate={(e) => handleNavigate('analyze', e)} />;
@@ -446,8 +469,8 @@ const App: React.FC = () => {
 
 
   return (
-    <div className="min-h-screen flex flex-col font-sans">
-        <header className="p-4 bg-white/80 backdrop-blur-sm sticky top-0 z-20 border-b border-slate-200/80">
+    <div className="min-h-screen flex flex-col font-sans bg-slate-50 text-slate-800">
+        <header className="p-4 bg-white/90 backdrop-blur-sm sticky top-0 z-20 border-b border-slate-200 shadow-sm">
             <nav className="max-w-7xl mx-auto flex items-center justify-between">
                 <a href="#/main" onClick={(e) => {
                     e.preventDefault();
@@ -463,7 +486,7 @@ const App: React.FC = () => {
                     }
                 }} className="flex items-center gap-2">
                     <LogoIcon />
-                    <span className="text-xl font-bold text-slate-800">IndexFlow</span>
+                    <span className="text-xl font-bold text-slate-900">IndexFlow</span>
                 </a>
                 <div className="hidden md:flex items-center gap-6">
                     <a href="#/analyze" onClick={(e) => handleNavigate('analyze', e)} className="flex items-center gap-1.5 text-slate-600 hover:text-sky-600 font-medium transition-colors"><AnalyzeIcon /> Analyze</a>
@@ -481,7 +504,7 @@ const App: React.FC = () => {
             </nav>
         </header>
 
-        <main className={`flex-grow p-4 sm:p-6 md:p-8 ${view === 'main' && !results && !isLoading ? 'bg-slate-900' : 'bg-slate-50'}`}>
+        <main className="flex-grow p-4 sm:p-6 md:p-8">
             <div className="max-w-7xl mx-auto">
                  {view !== 'main' && (
                   <div className="max-w-4xl mx-auto">
@@ -515,7 +538,7 @@ const App: React.FC = () => {
 
         <button 
             onClick={() => setIsChatOpen(!isChatOpen)}
-            className="fixed bottom-4 right-4 sm:right-6 z-20 w-14 h-14 bg-gradient-to-r from-sky-500 to-indigo-600 text-white rounded-full shadow-lg flex items-center justify-center hover:opacity-90 transform hover:scale-105 transition-all duration-300"
+            className="fixed bottom-4 right-4 sm:right-6 z-20 w-14 h-14 bg-sky-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-sky-700 transform hover:scale-105 transition-all duration-300"
             aria-label="Toggle AI Assistant Chat"
         >
             <ChatIcon />

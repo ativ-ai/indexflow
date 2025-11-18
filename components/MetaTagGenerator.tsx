@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { GeneratedMetaTags } from '../types';
 import { CodeTagIcon, CopyIcon, CheckIcon } from './Icons';
@@ -29,7 +30,7 @@ const MetaTagGenerator: React.FC<MetaTagGeneratorProps> = ({ metaTags }) => {
                 <h4 className="font-semibold text-slate-800 text-base">{label}</h4>
                 <button
                     onClick={() => handleCopyToClipboard(value, type)}
-                    className="p-1.5 rounded-md text-slate-400 hover:bg-slate-200 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all duration-200"
+                    className="p-1.5 rounded-md text-slate-400 hover:bg-slate-200 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-600 transition-all duration-200"
                     aria-label={`Copy ${label}`}
                 >
                     {justCopied === type ? <CheckIcon /> : <CopyIcon />}
@@ -45,7 +46,7 @@ const MetaTagGenerator: React.FC<MetaTagGeneratorProps> = ({ metaTags }) => {
                 <div className="text-sky-600">
                     <CodeTagIcon />
                 </div>
-                <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-sky-500 to-indigo-600">AI Meta Tag Suggestions</h2>
+                <h2 className="text-3xl font-bold text-slate-900">AI Meta Tag Suggestions</h2>
             </div>
             <div className="bg-slate-100/50 rounded-lg p-6 border border-slate-200 space-y-6">
                 <p className="text-slate-600 leading-relaxed">

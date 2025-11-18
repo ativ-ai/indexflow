@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { CheckIcon, TokenIcon } from './Icons';
 
@@ -138,7 +139,7 @@ const Pricing: React.FC<PricingProps> = ({ onNavigate, onUpgradeClick, isUpgradi
   return (
     <div className="bg-white rounded-xl shadow-xl ring-1 ring-slate-900/5 p-6 sm:p-8 animate-fade-in">
         <div className="text-center">
-            <h1 className="text-4xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-sky-500 to-indigo-600">
+            <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900">
                 Find the Perfect Plan
             </h1>
             <p className="text-slate-600 text-lg max-w-2xl mx-auto mt-2">
@@ -150,7 +151,7 @@ const Pricing: React.FC<PricingProps> = ({ onNavigate, onUpgradeClick, isUpgradi
             <span className={`font-medium transition-colors ${billingCycle === 'monthly' ? 'text-sky-600' : 'text-slate-500'}`}>Monthly</span>
             <button
                 onClick={() => setBillingCycle(prev => prev === 'monthly' ? 'yearly' : 'monthly')}
-                className={`relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 ${billingCycle === 'yearly' ? 'bg-sky-600' : 'bg-slate-300'}`}
+                className={`relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-600 ${billingCycle === 'yearly' ? 'bg-sky-600' : 'bg-slate-300'}`}
                 role="switch"
                 aria-checked={billingCycle === 'yearly'}
             >
@@ -178,7 +179,7 @@ const Pricing: React.FC<PricingProps> = ({ onNavigate, onUpgradeClick, isUpgradi
                 </div>
                 <button
                     onClick={onNavigate}
-                    className="mt-6 w-full text-center px-6 py-3 bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-semibold rounded-lg shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition-all"
+                    className="mt-6 w-full text-center px-6 py-3 bg-sky-600 text-white font-semibold rounded-lg shadow-md hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-600 transition-all"
                 >
                     Get Started
                 </button>
@@ -219,8 +220,8 @@ const Pricing: React.FC<PricingProps> = ({ onNavigate, onUpgradeClick, isUpgradi
                         disabled={isUpgrading || userPlan === 'Premium'}
                         className={`w-full text-center px-6 py-3 font-semibold rounded-lg shadow-md transition-all text-white
                             ${userPlan === 'Premium'
-                                ? 'bg-gradient-to-r from-emerald-500 to-green-600 cursor-not-allowed'
-                                : 'bg-gradient-to-r from-amber-500 to-orange-600 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:from-amber-400 disabled:to-orange-500 disabled:cursor-wait disabled:opacity-80'
+                                ? 'bg-emerald-600 cursor-not-allowed'
+                                : 'bg-amber-500 hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:bg-amber-400 disabled:cursor-wait disabled:opacity-80'
                             }
                         `}
                         aria-describedby={userPlan === 'Premium' ? 'premium-tooltip' : undefined}

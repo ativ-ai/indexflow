@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import ContactForm from './ContactForm';
 
@@ -88,7 +89,7 @@ const About: React.FC = () => {
   
   return (
     <section aria-labelledby="about-heading" className="bg-white rounded-xl shadow-xl ring-1 ring-slate-900/5 p-6 sm:p-8 animate-fade-in">
-      <h1 id="about-heading" className="text-3xl font-bold mb-5 text-transparent bg-clip-text bg-gradient-to-r from-sky-500 to-indigo-600">Our Mission</h1>
+      <h1 id="about-heading" className="text-3xl font-bold mb-5 text-slate-900">Our Mission</h1>
       <div className="space-y-6 text-slate-600 leading-relaxed">
          <p className="text-lg">
             <strong>IndexFlow was born from a simple idea: SEO shouldn't be a mystery.</strong>

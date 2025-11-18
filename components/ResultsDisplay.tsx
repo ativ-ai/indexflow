@@ -1,11 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { SeoResults, AuditCheck } from '../types';
 import AuditItem from './AuditItem';
 import StatusDisplay from './StatusDisplay';
 import ProFeatureTeaser from './ProFeatureTeaser';
 import MetaTagGenerator from './MetaTagGenerator';
 import InternalLinkAnalysisDisplay from './InternalLinkAnalysisDisplay';
-import { DownloadIcon, CopyIcon, CheckIcon, TwitterIcon, LinkedInIcon, CodeTagIcon, LinkIcon } from './Icons';
+import { DownloadIcon, CopyIcon, CheckIcon, TwitterIcon, LinkedInIcon, CodeTagIcon, LinkIcon, SparklesIcon } from './Icons';
 
 interface ResultsDisplayProps {
   results: SeoResults | null;
@@ -15,13 +15,42 @@ interface ResultsDisplayProps {
   userPlan: 'FREE' | 'Premium';
   onUpgradeClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
   sitemapBlobUrl: string;
+  isFreshAnalysis: boolean;
 }
 
-const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading, statusMessage, userPlan, onUpgradeClick, sitemapBlobUrl }) => {
-  const [justCopied, setJustCopied] = useState<string | null>(null);
+// A wrapper that handles the "appearing" animation.
+const GenerativeWrapper: React.FC<{ children: React.ReactNode; index: number; isFresh: boolean }> = ({ children, index, isFresh }) => {
+  if (!isFresh) {
+    return <>{children}</>;
+  }
+  // Staggered delay: 100ms per index
+  const delay = index * 100;
+  return (
+    <div className="opacity-0 animate-fade-in-up fill-mode-forwards" style={{ animationDelay: `${delay}ms` }}>
+      {children}
+    </div>
+  );
+};
 
-  // Refactored categorization logic to be more direct and clear.
-  // This ensures checks are categorized based solely on their ID, regardless of status or tier.
+const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading, statusMessage, userPlan, onUpgradeClick, sitemapBlobUrl, isFreshAnalysis }) => {
+  const [justCopied, setJustCopied] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(isFreshAnalysis);
+
+  // Calculate total duration of the "generative" animation
+  useEffect(() => {
+    if (isFreshAnalysis && results) {
+        // Estimate total items: 1 (Header) + Key Checks + 1 (Add Title) + Add Checks + 1 (Meta) + 1 (Links) + 1 (Sitemap)
+        const totalItems = 5 + results.audit.length + 4; 
+        const totalDuration = totalItems * 100 + 500; // + buffer
+        const timer = setTimeout(() => {
+            setIsGenerating(false);
+        }, totalDuration);
+        return () => clearTimeout(timer);
+    } else {
+        setIsGenerating(false);
+    }
+  }, [isFreshAnalysis, results]);
+
   const { keyChecks, additionalChecks } = useMemo(() => {
     if (!results) {
       return { keyChecks: [], additionalChecks: [] };
@@ -97,167 +126,208 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, url, isLoading
     return null;
   }
 
+  // We will assign an incrementing index to every block we render to stagger them
+  let renderIndex = 0;
+
   return (
-    <div className="mt-8 space-y-10 animate-fade-in">
-      {/* SEO Audit Section */}
-      <section>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-5 gap-4">
-            <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-sky-500 to-indigo-600">SEO Audit for <span className="text-indigo-600 break-all">{url}</span></h2>
-            <div className="flex items-center gap-2 flex-shrink-0">
-                <span className="text-sm font-medium text-slate-500">Share Results:</span>
-                <button 
-                  onClick={() => handleShare('twitter')} 
-                  aria-label="Share on Twitter" 
-                  className="p-2 rounded-full text-slate-500 hover:bg-slate-100 hover:text-sky-500 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                >
-                    <TwitterIcon />
-                </button>
-                <button 
-                  onClick={() => handleShare('linkedin')} 
-                  aria-label="Share on LinkedIn" 
-                  className="p-2 rounded-full text-slate-500 hover:bg-slate-100 hover:text-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                >
-                    <LinkedInIcon />
-                </button>
+    <div className="mt-8 space-y-10 relative pb-20">
+      
+      {/* SEO Audit Header */}
+      <GenerativeWrapper index={renderIndex++} isFresh={isFreshAnalysis}>
+        <section>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-5 gap-4">
+                <h2 className="text-3xl font-bold text-slate-800">SEO Audit for <span className="text-sky-600 break-all">{url}</span></h2>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className="text-sm font-medium text-slate-500">Share Results:</span>
+                    <button 
+                    onClick={() => handleShare('twitter')} 
+                    aria-label="Share on Twitter" 
+                    className="p-2 rounded-full text-slate-500 hover:bg-slate-100 hover:text-sky-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-sky-600"
+                    >
+                        <TwitterIcon />
+                    </button>
+                    <button 
+                    onClick={() => handleShare('linkedin')} 
+                    aria-label="Share on LinkedIn" 
+                    className="p-2 rounded-full text-slate-500 hover:bg-slate-100 hover:text-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-sky-600"
+                    >
+                        <LinkedInIcon />
+                    </button>
+                </div>
             </div>
-        </div>
 
-        {/* Key Checks */}
-        <div className="mb-8">
-            <h3 className="text-2xl font-bold mb-4 text-slate-700 border-b-2 border-slate-200 pb-2">Key Checks</h3>
-            <div className="space-y-4">
-                {keyChecks.map(item => {
-                  if (userPlan === 'FREE' && item.tier === 'Premium') {
-                    return <AuditItem key={item.id} {...item} isLocked={true} onUpgradeClick={onUpgradeClick} />;
-                  }
-                  return <AuditItem key={item.id} {...item} isLocked={false} />;
-                })}
+            {/* Key Checks */}
+            <div className="mb-8">
+                <h3 className="text-2xl font-bold mb-4 text-slate-700 border-b-2 border-slate-200 pb-2">Key Checks</h3>
+                <div className="space-y-4">
+                    {keyChecks.map(item => {
+                    const content = userPlan === 'FREE' && item.tier === 'Premium' ? (
+                         <AuditItem key={item.id} {...item} isLocked={true} onUpgradeClick={onUpgradeClick} />
+                    ) : (
+                         <AuditItem key={item.id} {...item} isLocked={false} />
+                    );
+                    return (
+                        <GenerativeWrapper key={item.id} index={renderIndex++} isFresh={isFreshAnalysis}>
+                            {content}
+                        </GenerativeWrapper>
+                    );
+                    })}
+                </div>
             </div>
-        </div>
 
-        {/* Additional Checks */}
-        <div className="mb-8">
-            <h3 className="text-2xl font-bold mb-4 text-slate-700 border-b-2 border-slate-200 pb-2">Additional Checks</h3>
-            <div className="space-y-4">
-                {additionalChecks.map(item => {
-                  if (userPlan === 'FREE' && item.tier === 'Premium') {
-                    return <AuditItem key={item.id} {...item} isLocked={true} onUpgradeClick={onUpgradeClick} />;
-                  }
-                  return <AuditItem key={item.id} {...item} isLocked={false} />;
-                })}
+            {/* Additional Checks */}
+            <div className="mb-8">
+                <GenerativeWrapper index={renderIndex++} isFresh={isFreshAnalysis}>
+                    <h3 className="text-2xl font-bold mb-4 text-slate-700 border-b-2 border-slate-200 pb-2">Additional Checks</h3>
+                </GenerativeWrapper>
+                <div className="space-y-4">
+                    {additionalChecks.map(item => {
+                     const content = userPlan === 'FREE' && item.tier === 'Premium' ? (
+                         <AuditItem key={item.id} {...item} isLocked={true} onUpgradeClick={onUpgradeClick} />
+                     ) : (
+                         <AuditItem key={item.id} {...item} isLocked={false} />
+                     );
+                     return (
+                        <GenerativeWrapper key={item.id} index={renderIndex++} isFresh={isFreshAnalysis}>
+                            {content}
+                        </GenerativeWrapper>
+                     );
+                    })}
+                </div>
             </div>
-        </div>
-      </section>
+        </section>
+      </GenerativeWrapper>
 
       {/* Meta Tag Generator Section */}
-      <section>
-        {userPlan === 'Premium' && results.generatedMetaTags && (
-          <MetaTagGenerator metaTags={results.generatedMetaTags} />
-        )}
-        {userPlan === 'FREE' && (
-          <ProFeatureTeaser
-            icon={<CodeTagIcon />}
-            title="AI Meta Tag Generator"
-            description="Premium users get access to AI-generated title tags, meta descriptions, and keywords to boost click-through rates from search results."
-            onUpgradeClick={onUpgradeClick}
-          />
-        )}
-      </section>
+      <GenerativeWrapper index={renderIndex++} isFresh={isFreshAnalysis}>
+        <section>
+            {userPlan === 'Premium' && results.generatedMetaTags && (
+            <MetaTagGenerator metaTags={results.generatedMetaTags} />
+            )}
+            {userPlan === 'FREE' && (
+            <ProFeatureTeaser
+                icon={<CodeTagIcon />}
+                title="AI Meta Tag Generator"
+                description="Premium users get access to AI-generated title tags, meta descriptions, and keywords to boost click-through rates from search results."
+                onUpgradeClick={onUpgradeClick}
+            />
+            )}
+        </section>
+      </GenerativeWrapper>
 
       {/* Internal Link Analysis Section */}
-      <section>
-        {userPlan === 'Premium' && results.internalLinkAnalysis ? (
-          <InternalLinkAnalysisDisplay analysis={results.internalLinkAnalysis} />
-        ) : (
-          <ProFeatureTeaser
-            icon={<LinkIcon />}
-            title="Internal Link Optimization Analysis"
-            description="Premium users get an AI-powered analysis of their internal linking strategy, with suggestions for anchor text, orphaned pages, and new linking opportunities."
-            onUpgradeClick={onUpgradeClick}
-          />
-        )}
-      </section>
+      <GenerativeWrapper index={renderIndex++} isFresh={isFreshAnalysis}>
+        <section>
+            {userPlan === 'Premium' && results.internalLinkAnalysis ? (
+            <InternalLinkAnalysisDisplay analysis={results.internalLinkAnalysis} />
+            ) : (
+            <ProFeatureTeaser
+                icon={<LinkIcon />}
+                title="Internal Link Optimization Analysis"
+                description="Premium users get an AI-powered analysis of their internal linking strategy, with suggestions for anchor text, orphaned pages, and new linking opportunities."
+                onUpgradeClick={onUpgradeClick}
+            />
+            )}
+        </section>
+      </GenerativeWrapper>
 
       {/* Sitemap Section */}
-      <section>
-        <h2 className="text-3xl font-bold mb-5 text-transparent bg-clip-text bg-gradient-to-r from-sky-500 to-indigo-600">Your Sitemap is Ready!</h2>
-        <div className="bg-slate-100/50 rounded-lg p-6 border border-slate-200">
-          <p className="mb-5 text-slate-600 leading-relaxed">A sitemap has been generated based on the initial crawl of your site. You can download it below or inspect the discovered internal links.</p>
-          <a
-            href={sitemapBlobUrl}
-            download="sitemap.xml"
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-semibold rounded-lg shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-100 focus:ring-sky-500 transition-all duration-300"
-          >
-            <DownloadIcon />
-            <span>Download sitemap.xml</span>
-          </a>
+      <GenerativeWrapper index={renderIndex++} isFresh={isFreshAnalysis}>
+        <section>
+            <h2 className="text-3xl font-bold mb-5 text-slate-900">Your Sitemap is Ready!</h2>
+            <div className="bg-slate-100/50 rounded-lg p-6 border border-slate-200">
+            <p className="mb-5 text-slate-600 leading-relaxed">A sitemap has been generated based on the initial crawl of your site. You can download it below or inspect the discovered internal links.</p>
+            <a
+                href={sitemapBlobUrl}
+                download="sitemap.xml"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-sky-600 text-white font-semibold rounded-lg shadow-md hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-100 focus:ring-sky-600 transition-all duration-300"
+            >
+                <DownloadIcon />
+                <span>Download sitemap.xml</span>
+            </a>
 
-          {results.internalLinks?.length > 0 && (
-            <div className="mt-6">
-              <h3 className="font-semibold text-slate-800 text-base mb-3">Internal Links Found ({results.internalLinks.length})</h3>
-              <div className="max-h-60 overflow-y-auto bg-white border border-slate-200 rounded-lg p-2 space-y-2">
-                {results.internalLinks.map(link => (
-                  <div key={link} className="flex items-center justify-between p-2 rounded-md hover:bg-slate-50 transition-colors duration-200 group">
-                    <a href={link} target="_blank" rel="noopener noreferrer" className="text-sm text-sky-700 hover:underline truncate" title={link}>
-                      {link}
-                    </a>
+            {results.internalLinks?.length > 0 && (
+                <div className="mt-6">
+                <h3 className="font-semibold text-slate-800 text-base mb-3">Internal Links Found ({results.internalLinks.length})</h3>
+                <div className="max-h-60 overflow-y-auto bg-white border border-slate-200 rounded-lg p-2 space-y-2">
+                    {results.internalLinks.map(link => (
+                    <div key={link} className="flex items-center justify-between p-2 rounded-md hover:bg-slate-50 transition-colors duration-200 group">
+                        <a href={link} target="_blank" rel="noopener noreferrer" className="text-sm text-sky-700 hover:underline truncate" title={link}>
+                        {link}
+                        </a>
+                        <button 
+                        onClick={() => handleCopyToClipboard(link, link)}
+                        className="flex-shrink-0 ml-4 p-1.5 rounded-md text-slate-400 hover:bg-slate-200 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-600 transition-all duration-200"
+                        aria-label={`Copy link: ${link}`}
+                        >
+                        {justCopied === link ? <CheckIcon /> : <CopyIcon />}
+                        </button>
+                    </div>
+                    ))}
+                </div>
+                </div>
+            )}
+
+            <div className="mt-6 border-t border-slate-200 pt-6 text-sm text-slate-600 space-y-4 leading-relaxed">
+                <h3 className="font-semibold text-slate-800 text-base">How to Use Your Sitemap:</h3>
+                <ol className="list-decimal list-outside space-y-4 pl-5">
+                <li>
+                    <strong>Upload the File:</strong> Place the downloaded <code className="bg-slate-200 text-indigo-700 font-mono px-1.5 py-0.5 rounded-md">sitemap.xml</code> file in the root directory of your website (the main folder, often named <code>public_html</code> or <code>www</code>).
+                </li>
+                <li>
+                    <strong>(Optional) Update Timestamps:</strong> For best results, edit the <code className="bg-slate-200 text-indigo-700 font-mono px-1.5 py-0.5 rounded-md">&lt;lastmod&gt;</code> date for each URL. This date should reflect when the page's content was last significantly changed. This helps search engines prioritize crawling.
+                </li>
+                <li>
+                    <strong>Update robots.txt:</strong> Add the following line to your <code className="bg-slate-200 text-indigo-700 font-mono px-1.5 py-0.5 rounded-md">robots.txt</code> file. This tells search engines where to find your sitemap.
+                    <div className="relative mt-2">
+                    <pre className="bg-slate-800 text-slate-100 p-3 pr-12 rounded-md block text-xs overflow-x-auto">{robotsTxtLine}</pre>
                     <button 
-                      onClick={() => handleCopyToClipboard(link, link)}
-                      className="flex-shrink-0 ml-4 p-1.5 rounded-md text-slate-400 hover:bg-slate-200 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all duration-200"
-                      aria-label={`Copy link: ${link}`}
+                        onClick={() => handleCopyToClipboard(robotsTxtLine, 'robots')}
+                        className="absolute top-1/2 right-2 -translate-y-1/2 p-1.5 rounded-md text-slate-400 hover:bg-slate-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-sky-600 transition-all duration-200"
+                        aria-label="Copy robots.txt line"
                     >
-                      {justCopied === link ? <CheckIcon /> : <CopyIcon />}
+                        {justCopied === 'robots' ? <CheckIcon /> : <CopyIcon />}
                     </button>
-                  </div>
-                ))}
-              </div>
+                    </div>
+                </li>
+                <li>
+                    <strong>Submit to Search Engines:</strong> Submit your sitemap URL to search engines to ensure they discover your pages. Your sitemap URL is:
+                    <div className="relative mt-2">
+                        <pre className="bg-slate-800 text-slate-100 p-3 pr-12 rounded-md block text-xs overflow-x-auto">{sitemapPublicUrl}</pre>
+                        <button
+                            onClick={() => handleCopyToClipboard(sitemapPublicUrl, 'sitemapUrl')}
+                            className="absolute top-1/2 right-2 -translate-y-1/2 p-1.5 rounded-md text-slate-400 hover:bg-slate-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-sky-600 transition-all duration-200"
+                            aria-label="Copy sitemap URL"
+                        >
+                            {justCopied === 'sitemapUrl' ? <CheckIcon /> : <CopyIcon />}
+                        </button>
+                    </div>
+                    <p className="mt-2 text-slate-600">Use the links below to submit:</p>
+                    <ul className="list-disc list-inside mt-2 space-y-1 pl-2">
+                        <li><a href="https://search.google.com/search-console" target="_blank" rel="noopener noreferrer" className="font-medium text-sky-600 hover:text-sky-800 hover:underline">Google Search Console</a></li>
+                        <li><a href="https://www.bing.com/webmasters/" target="_blank" rel="noopener noreferrer" className="font-medium text-sky-600 hover:text-sky-800 hover:underline">Bing Webmaster Tools</a></li>
+                    </ul>
+                </li>
+                </ol>
             </div>
-          )}
+            </div>
+        </section>
+      </GenerativeWrapper>
 
-          <div className="mt-6 border-t border-slate-200 pt-6 text-sm text-slate-600 space-y-4 leading-relaxed">
-            <h3 className="font-semibold text-slate-800 text-base">How to Use Your Sitemap:</h3>
-            <ol className="list-decimal list-outside space-y-4 pl-5">
-              <li>
-                <strong>Upload the File:</strong> Place the downloaded <code className="bg-slate-200 text-indigo-700 font-mono px-1.5 py-0.5 rounded-md">sitemap.xml</code> file in the root directory of your website (the main folder, often named <code>public_html</code> or <code>www</code>).
-              </li>
-              <li>
-                <strong>(Optional) Update Timestamps:</strong> For best results, edit the <code className="bg-slate-200 text-indigo-700 font-mono px-1.5 py-0.5 rounded-md">&lt;lastmod&gt;</code> date for each URL. This date should reflect when the page's content was last significantly changed. This helps search engines prioritize crawling.
-              </li>
-              <li>
-                <strong>Update robots.txt:</strong> Add the following line to your <code className="bg-slate-200 text-indigo-700 font-mono px-1.5 py-0.5 rounded-md">robots.txt</code> file. This tells search engines where to find your sitemap.
-                <div className="relative mt-2">
-                  <pre className="bg-slate-800 text-slate-100 p-3 pr-12 rounded-md block text-xs overflow-x-auto">{robotsTxtLine}</pre>
-                  <button 
-                    onClick={() => handleCopyToClipboard(robotsTxtLine, 'robots')}
-                    className="absolute top-1/2 right-2 -translate-y-1/2 p-1.5 rounded-md text-slate-400 hover:bg-slate-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all duration-200"
-                    aria-label="Copy robots.txt line"
-                  >
-                    {justCopied === 'robots' ? <CheckIcon /> : <CopyIcon />}
-                  </button>
-                </div>
-              </li>
-              <li>
-                <strong>Submit to Search Engines:</strong> Submit your sitemap URL to search engines to ensure they discover your pages. Your sitemap URL is:
-                <div className="relative mt-2">
-                    <pre className="bg-slate-800 text-slate-100 p-3 pr-12 rounded-md block text-xs overflow-x-auto">{sitemapPublicUrl}</pre>
-                    <button
-                        onClick={() => handleCopyToClipboard(sitemapPublicUrl, 'sitemapUrl')}
-                        className="absolute top-1/2 right-2 -translate-y-1/2 p-1.5 rounded-md text-slate-400 hover:bg-slate-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all duration-200"
-                        aria-label="Copy sitemap URL"
-                    >
-                        {justCopied === 'sitemapUrl' ? <CheckIcon /> : <CopyIcon />}
-                    </button>
-                </div>
-                <p className="mt-2 text-slate-600">Use the links below to submit:</p>
-                 <ul className="list-disc list-inside mt-2 space-y-1 pl-2">
-                    <li><a href="https://search.google.com/search-console" target="_blank" rel="noopener noreferrer" className="font-medium text-sky-600 hover:text-sky-800 hover:underline">Google Search Console</a></li>
-                    <li><a href="https://www.bing.com/webmasters/" target="_blank" rel="noopener noreferrer" className="font-medium text-sky-600 hover:text-sky-800 hover:underline">Bing Webmaster Tools</a></li>
-                </ul>
-              </li>
-            </ol>
-          </div>
+      {/* Generative AI Cursor/Footer */}
+      {isGenerating && (
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-sky-100 flex items-center justify-center z-50 animate-fade-in-up shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-sky-50 text-sky-700 border border-sky-200">
+                 <SparklesIcon className="w-5 h-5 animate-spin" />
+                 <span className="font-mono text-sm font-bold tracking-wide">AI Generating Report...</span>
+                 <span className="flex gap-1 ml-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-bounce [animation-delay:-0.3s]"></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-bounce [animation-delay:-0.15s]"></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-bounce"></span>
+                 </span>
+            </div>
         </div>
-      </section>
+      )}
     </div>
   );
 };

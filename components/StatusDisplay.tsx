@@ -1,20 +1,25 @@
 import React from 'react';
 import AnalysisAnimation from './AnalysisAnimation';
+import ReportGenerationAnimation from './ReportGenerationAnimation';
 
 interface StatusDisplayProps {
   message: string;
+  stage?: 'analyzing' | 'generating';
 }
 
-const StatusDisplay: React.FC<StatusDisplayProps> = ({ message }) => {
+const StatusDisplay: React.FC<StatusDisplayProps> = ({ message, stage = 'analyzing' }) => {
   return (
-    <div className="mt-8 flex flex-col items-center justify-center gap-6 p-6 bg-slate-100/50 rounded-lg border border-slate-200 animate-fade-in">
-        <h2 className="text-2xl font-bold text-slate-800 text-center">
-            {message}
-        </h2>
-        <p className="text-slate-600 text-center -mt-4">
-            This may take a moment. We're performing a comprehensive audit.
+    <div className="mt-8 flex flex-col items-center justify-center w-full animate-fade-in">
+        <div className="w-full">
+             {stage === 'analyzing' ? (
+                 <AnalysisAnimation />
+             ) : (
+                 <ReportGenerationAnimation />
+             )}
+        </div>
+        <p className="text-slate-500 text-sm mt-6 animate-pulse font-medium tracking-wide uppercase">
+            {message || "System Processing..."}
         </p>
-      <AnalysisAnimation />
     </div>
   );
 };
